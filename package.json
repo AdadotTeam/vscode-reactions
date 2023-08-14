@@ -41,7 +41,7 @@
         {
           "id": "code-reactions",
           "title": "Reactions",
-          "icon": "resources/package-explorer.svg"
+          "icon": "assets/icons/rss-feed.svg"
         }
       ]
     },
@@ -102,6 +102,41 @@
         "category": "Code Reactions"
       },
       {
+        "command": "code-reactions.dislikeWithContent",
+        "title": ":thumbsdown: 👎 with content",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.bugWithContent",
+        "title": ":bug: 🐛 with content",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.poopWithContent",
+        "title": ":poop: 💩 with content",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.rocketWithContent",
+        "title": ":rocket: 🚀 with content",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.thinkingWithContent",
+        "title": ":thinking: 🤔 with content",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.heartEyesWithContent",
+        "title": ":heartEyes: 😍 with content",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.eyesWithContent",
+        "title": ":eyes: 👀 with content",
+        "category": "Code Reactions"
+      },
+      {
         "command": "code-reactions.annotate",
         "title": "Toggle Reactions Annotations",
         "category": "Code Reactions",
@@ -118,10 +153,11 @@
       "editor/context": [
         {
           "command": "code-reactions.annotate",
-          "group": "Code Reactions"
+          "group": "Code Reactions",
+          "when": "code-reactions.initialized"
         },
         {
-          "when": "editorTextFocus || editorHasSelection",
+          "when": "(editorTextFocus || editorHasSelection) && code-reactions.initialized",
           "submenu": "code-reactions.addReactionWithContent",
           "group": "Code Reactions Content"
         }
@@ -129,12 +165,34 @@
       "code-reactions.addReactionWithContent": [
         {
           "command": "code-reactions.likeWithContent"
+        },
+        {
+          "command": "code-reactions.dislikeWithContent"
+        },
+        {
+          "command": "code-reactions.bugWithContent"
+        },
+        {
+          "command": "code-reactions.poopWithContent"
+        },
+        {
+          "command": "code-reactions.rocketWithContent"
+        },
+        {
+          "command": "code-reactions.thinkingWithContent"
+        },
+        {
+          "command": "code-reactions.heartEyesWithContent"
+        },
+        {
+          "command": "code-reactions.eyesWithContent"
         }
       ],
       "editor/title": [
         {
           "command": "code-reactions.annotate",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "code-reactions.initialized"
         }
       ]
     },

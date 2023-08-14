@@ -1,4 +1,4 @@
-import {Command, ConfigurationChangeEvent, StatusBarAlignment, StatusBarItem, window,} from "vscode";
+import {Command, ConfigurationChangeEvent, StatusBarAlignment, StatusBarItem, ThemeColor, window,} from "vscode";
 import {ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
 import {PartialTextEditor} from "../util/vs-code";
 import {StatusBarReaction} from "./status-bar-reaction";
@@ -139,10 +139,10 @@ export class StatusBarView {
 	}
 
 	public activity(): void {
-		if(!getProperty("statusBarReactionsEnabled")){
+		if(!getProperty("statusBarReactionsEnabled")) {
 			return;
 		}
-		this.showOnlyOne("$(sync~spin) Calculating Reactions", '');
+		this.showOnlyOne("$(sync~spin) 🤔", 'Calculating Reactions...');
 	}
 
 	public dispose(): void {
@@ -179,7 +179,7 @@ export class StatusBarView {
 
 	private renderMore(text: string): void {
 		this.statusBarMore.text = text;
-		this.statusBarMore.color = 'white';
+		this.statusBarMore.color = new ThemeColor(`statusBarItem.prominentForeground`);
 		this.statusBarMore.tooltip = this.showingMore ? 'Hide extra reactions' : 'Show more reactions';
 		this.statusBarMore.command = this.more();
 		this.statusBarMore.show();

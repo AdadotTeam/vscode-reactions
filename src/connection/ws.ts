@@ -1,4 +1,4 @@
-import {TextDocument, WorkspaceFolder, workspace} from "vscode";
+import {TextDocument, WorkspaceFolder, workspace, commands} from "vscode";
 import {WebSocket} from "ws";
 import {
     getCurrentBranch,
@@ -25,7 +25,7 @@ import {
     Details
 } from "../types/app";
 import hash from "../util/hash";
-import {EMPTY_LINE_REACTION} from "../util/constants";
+import {APP_HANDLE, EMPTY_LINE_REACTION} from "../util/constants";
 import {getFileName} from "../util/file-name";
 import {FeedViewProvider} from "../views/feed-view";
 import store from "../util/store";
@@ -47,7 +47,7 @@ export class WS {
     public OPEN = false;
     public ERROR = false;
     private USE_TEMP = false;
-    private updateAppViewCallback: any;
+    private readonly updateAppViewCallback: any;
     private feedViewProvider: FeedViewProvider;
 
     private onNewReactionCallback: NewReactionEventCallbackFunction = () => undefined;
@@ -132,6 +132,7 @@ export class WS {
 
         ws.on('error', (e) => {
             this.ERROR = true;
+            commands.executeCommand('setContext', `${APP_HANDLE}.initialized`, false);
             setTimeout(() => {
                 this.open(folder, emailHash, retries + 1);
             }, 10000 * retries);
@@ -142,12 +143,11 @@ export class WS {
             this.OPEN = true;
             this.ERROR = false;
             this.onReconnectCallback();
+            commands.executeCommand('setContext', `${APP_HANDLE}.initialized`, true);
             console.log('open');
         });
 
         ws.on('close', () => {
-            console.log('connection closed');
-            console.log('reconnecting');
             reconnect();
         });
 

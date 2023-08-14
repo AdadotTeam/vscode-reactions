@@ -33,11 +33,11 @@ export class StatusBarReaction {
 		return `${this.emoji} ${lineReactions[this.emoji] || 0}`;
 	}
 
-	private color(lineReactions: StoreLineReaction | undefined):string {
-		if(lineReactions && lineReactions[this.yourEmoji] > 0){
-			return 'green';
+	private color(lineReactions: StoreLineReaction | undefined):string | ThemeColor {
+		if(lineReactions && lineReactions[this.yourEmoji] > 0) {
+			return '#59C36A';
 		}
-		return 'white';
+		return new ThemeColor(`statusBarItem.prominentForeground`);
 	}
 
 	private command(lineReactions: StoreLineReaction|undefined, linesSelected: number): Command | undefined{
@@ -88,7 +88,7 @@ export class StatusBarReaction {
 
     public renderStatic(text: string, tooltip: string, state?: 'warning' | 'error'): void {
 		this.statusBarItem.text = text;
-		this.statusBarItem.color = 'white';
+		this.statusBarItem.color = new ThemeColor(`statusBarItem.prominentForeground`);
 		this.statusBarItem.tooltip = tooltip;
 		this.statusBarItem.command = undefined;
 		if(state) {
