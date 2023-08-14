@@ -30,7 +30,7 @@ div {
   
   .table-container {
 	display: block;
-	margin: 2em auto;
+	/*margin: 2em auto;*/
 	width: 100%;
 	word-break: break-all;
   }
@@ -62,7 +62,7 @@ div {
   }
   
   .flex-row {
-	width: calc(100% / 6);
+	width: calc(100% / 5);
 	text-align: center;
 	padding: 0.5em 0.5em;
 	display: flex;
@@ -282,6 +282,12 @@ p.tooltip-text:before {
 .comment-tooltip {
 	width: 100px;
     margin-top: 10px;
+}
+
+.comment {
+	margin-right: 20px;
+	min-width: 20px;
+	min-height: 20px;
 }
 
 

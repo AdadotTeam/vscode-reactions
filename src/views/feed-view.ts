@@ -260,8 +260,7 @@ export class FeedViewProvider implements WebviewViewProvider {
 			<div class="flex-row" role="columnheader">When</div>
 			<div class="flex-row" role="columnheader">File</div>
 			<div class="flex-row" role="columnheader">Branch</div>
-			<div class="flex-row" role="columnheader">Content</div>
-			<div class="flex-row" role="columnheader">Count</div>
+			<div class="flex-row" role="columnheader">Reaction</div>
 		  </div>`;
 
 		const reactionsSorted = Object.values(reactionsTransformed).sort((a,b)=> {
@@ -313,6 +312,7 @@ export class FeedViewProvider implements WebviewViewProvider {
 						  </div>
 						  <div class="flex-row" role="cell">${reaction.branch || '...'}</div>
 						  <div class="flex-row" role="cell">
+						  <div class="comment">
 						   ${
                             reaction.content ? `
 							  <div class="tooltip-container">
@@ -321,12 +321,10 @@ export class FeedViewProvider implements WebviewViewProvider {
 									  <path opacity="1" d="M14.4 0H1.6C0.72 0 0 0.72 0 1.6V16L3.2 12.8H14.4C15.28 12.8 16 12.08 16 11.2V1.6C16 0.72 15.28 0 14.4 0Z" fill="rgb(137,137,137)"/>
 								  </svg>
 							  </div>
-							  ` : `<svg class="tooltip-button" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-							  <path opacity="0.7" d="M14.4 0H1.6C0.72 0 0 0.72 0 1.6V16L3.2 12.8H14.4C15.28 12.8 16 12.08 16 11.2V1.6C16 0.72 15.28 0 14.4 0Z" fill="rgb(108,108,108)"/>
-						  </svg>`
+							  ` : ``
                         }
 						  </div>
-						  <div class="flex-row" role="cell">
+						  
 								  <div class="md-chips">
 									  <div class="md-chip md-chip-hover">
 									  <div class="md-chip-icon">${reaction.type || ''}</div>
