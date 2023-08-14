@@ -98,42 +98,42 @@
       },
       {
         "command": "code-reactions.likeWithContent",
-        "title": ":thumbsup: 👍 with content",
+        "title": ":thumbsup: 👍 with comment",
         "category": "Code Reactions"
       },
       {
         "command": "code-reactions.dislikeWithContent",
-        "title": ":thumbsdown: 👎 with content",
+        "title": ":thumbsdown: 👎 with comment",
         "category": "Code Reactions"
       },
       {
         "command": "code-reactions.bugWithContent",
-        "title": ":bug: 🐛 with content",
+        "title": ":bug: 🐛 with comment",
         "category": "Code Reactions"
       },
       {
         "command": "code-reactions.poopWithContent",
-        "title": ":poop: 💩 with content",
+        "title": ":poop: 💩 with comment",
         "category": "Code Reactions"
       },
       {
         "command": "code-reactions.rocketWithContent",
-        "title": ":rocket: 🚀 with content",
+        "title": ":rocket: 🚀 with comment",
         "category": "Code Reactions"
       },
       {
         "command": "code-reactions.thinkingWithContent",
-        "title": ":thinking: 🤔 with content",
+        "title": ":thinking: 🤔 with comment",
         "category": "Code Reactions"
       },
       {
         "command": "code-reactions.heartEyesWithContent",
-        "title": ":heartEyes: 😍 with content",
+        "title": ":heartEyes: 😍 with comment",
         "category": "Code Reactions"
       },
       {
         "command": "code-reactions.eyesWithContent",
-        "title": ":eyes: 👀 with content",
+        "title": ":eyes: 👀 with comment",
         "category": "Code Reactions"
       },
       {
@@ -146,7 +146,7 @@
     "submenus": [
       {
         "id": "code-reactions.addReactionWithContent",
-        "label": "Add Reaction With Content"
+        "label": "Add Reaction With Comment"
       }
     ],
     "menus": {
