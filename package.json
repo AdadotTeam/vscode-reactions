@@ -1,0 +1,220 @@
+{
+  "name": "code-reactions",
+  "displayName": "Code Reactions",
+  "description": "Add and see other's reactions to your code!",
+  "version": "1.0.0",
+  "publisher": "Adadot",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "homepage": "https://adadot.com/code-reactions",
+	"bugs": {
+		"url": "https://github.com/AdadotTeam/vscode-reactions/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/AdadotTeam/vscode-reactions.git"
+	},
+  "categories": [
+    "Other"
+  ],
+  "galleryBanner": {
+		"color": "#59C36A",
+		"theme": "dark"
+	},
+  "icon": "assets/images/logo.png",
+  "license": "MIT",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "keywords": [
+    "reactions",
+    "likes",
+    "gitreactions",
+    "gitlikes",
+    "comments",
+    "gitcomments"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "code-reactions",
+          "title": "Reactions",
+          "icon": "resources/package-explorer.svg"
+        }
+      ]
+    },
+    "views": {
+      "code-reactions": [
+        {
+          "type": "webview",
+          "id": "code-reactions.feed",
+          "name": "Feed"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "code-reactions.like",
+        "title": ":thumbsup: 👍",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.dislike",
+        "title": ":thumbsdown: 👎",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.bug",
+        "title": ":bug: 🐛",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.poop",
+        "title": ":poop: 💩",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.rocket",
+        "title": ":rocket: 🚀",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.thinking",
+        "title": ":thinking: 🤔",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.heartEyes",
+        "title": ":heartEyes: 😍",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.eyes",
+        "title": ":eyes: 👀",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.likeWithContent",
+        "title": ":thumbsup: 👍 with content",
+        "category": "Code Reactions"
+      },
+      {
+        "command": "code-reactions.annotate",
+        "title": "Toggle Reactions Annotations",
+        "category": "Code Reactions",
+        "icon": "$(reactions)"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "code-reactions.addReactionWithContent",
+        "label": "Add Reaction With Content"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "code-reactions.annotate",
+          "group": "Code Reactions"
+        },
+        {
+          "when": "editorTextFocus || editorHasSelection",
+          "submenu": "code-reactions.addReactionWithContent",
+          "group": "Code Reactions Content"
+        }
+      ],
+      "code-reactions.addReactionWithContent": [
+        {
+          "command": "code-reactions.likeWithContent"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "code-reactions.annotate",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "Code Reactions",
+      "properties": {
+        "code-reactions.inlineMessageEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show reactions inline (next to the code)"
+        },
+        "code-reactions.inlineMessageMargin": {
+          "type": "number",
+          "default": 2,
+          "description": "The amount of margin between line and inline reactions"
+        },
+        "code-reactions.inlineMessageNoCommit": {
+          "type": "string",
+          "default": "Not Committed Yet",
+          "description": "Customize the inline message"
+        },
+        "code-reactions.statusBarMessageNoCommit": {
+          "type": "string",
+          "default": "Not Committed Yet",
+          "description": "Customize the status bar message"
+        },
+        "code-reactions.statusBarProminentReactions": {
+          "type": "number",
+          "default": 2,
+          "description": "Customize the number of status bar prominent reactions"
+        },
+        "code-reactions.newReactionNotificationsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable received new reaction notifications"
+        },
+        "code-reactions.notifyOnlyOnMyLines": {
+          "type": "boolean",
+          "default": false,
+          "description": "Get notifications for reactions that happened only on lines you have authored"
+        },
+        "code-reactions.ignoreWhitespace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the blame ignores whitespace when comparing the parent’s version and the child’s to find where the lines came from."
+        }
+      }
+    }
+  },
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "20.2.5",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.5.5",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
+    "@vscode/test-electron": "^2.3.2",
+    "eslint": "^8.41.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "ts-loader": "^9.4.3",
+    "typescript": "^5.1.3",
+    "webpack": "^5.85.0",
+    "webpack-cli": "^5.1.1"
+  },
+  "dependencies": {
+    "timeago.js": "^4.0.0-beta.3",
+    "ws": "^8.13.0"
+  }
+}

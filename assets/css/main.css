@@ -1,0 +1,342 @@
+body {
+	background-color: transparent;
+}
+
+
+
+
+
+
+
+/* 
+
+
+
+
+
+TABLE 
+
+
+
+
+*/
+
+
+
+
+div {
+	box-sizing: border-box;
+  }
+  
+  .table-container {
+	display: block;
+	margin: 2em auto;
+	width: 100%;
+	word-break: break-all;
+  }
+  
+  .flag-icon {
+	margin-right: 0.1em;
+  }
+  
+  .flex-table {
+	display: flex;
+	flex-flow: row wrap;
+	/* border-left: solid 1px #d9d9d9; */
+	transition: 0.5s;
+	align-items: center;
+	opacity: 0.8;
+  }
+  .flex-table:first-of-type {
+	/* border-top: solid 1px #1565C0; */
+	/* border-left: solid 1px #1565C0; */
+  }
+  .flex-table:first-of-type .flex-row {
+	background: #1976D2;
+	color: white;
+	/* border-color: #1565C0; */
+  }
+  .flex-table:hover {
+	opacity: 1;
+	transition: 200ms;
+  }
+  
+  .flex-row {
+	width: calc(100% / 6);
+	text-align: center;
+	padding: 0.5em 0.5em;
+	display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+	/* border-right: solid 1px #d9d9d9;
+	border-bottom: solid 1px #d9d9d9; */
+  }
+
+  .align-children{
+	display: flex; flex-direction: row;
+  }
+  
+  .rowspan {
+	display: flex;
+	flex-flow: row wrap;
+	align-items: flex-start;
+	justify-content: center;
+  }
+  
+  .column {
+	display: flex;
+	flex-flow: column wrap;
+	width: 75%;
+	padding: 0;
+  }
+  .column .flex-row {
+	display: flex;
+	flex-flow: row wrap;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	opacity: 0.8;
+	/* border-bottom: solid 1px #d9d9d9; */
+  }
+  .column .flex-row:hover {
+	opacity: 1;
+	transition: 200ms;
+  }
+  
+  .flex-cell {
+	width: calc(100% / 3);
+	text-align: center;
+	padding: 0.5em 0.5em;
+	/* border-right: solid 1px #d9d9d9; */
+  }
+  @media all and (max-width: 767px) {
+	.flex-row {
+	  width: calc(100% / 3);
+	}
+	.flex-row.first {
+	  width: 100%;
+	}
+  
+	.column {
+	  width: 100%;
+	}
+  }
+  @media all and (max-width: 430px) {
+	/* .flex-table .flex-row {
+	  border-bottom: 0;
+	}
+	.flex-table .flex-row:last-of-type {
+	  border-bottom: solid 1px #d9d9d9;
+	}
+  
+	.header .flex-row {
+	  border-bottom: solid 1px;
+	} */
+  
+	.flex-row {
+	  width: 100%;
+	}
+	.flex-row.first {
+	  width: 100%;
+	  /* border-bottom: solid 1px #d9d9d9; */
+	}
+  
+	.column {
+	  width: 100%;
+	}
+	.column .flex-row {
+	  /* border-bottom: solid 1px #d9d9d9; */
+	}
+  
+	.flex-cell {
+	  width: 100%;
+	}
+  }
+
+
+
+
+/* 
+
+
+
+
+
+CHIP 
+
+
+
+
+*/
+
+.md-chip {
+	display: inline-block;
+	background: #e0e0e0;
+	padding: 0 12px;
+	border-radius: 32px;
+	font-size: 13px;
+	color: black;
+  }
+  .md-chip.md-chip-hover:hover {
+	background: #ccc;
+  }
+  
+  .md-chip-clickable {
+	cursor: pointer;
+  }
+  
+  .md-chip, .md-chip-icon {
+	height: 32px;
+	line-height: 32px;
+  }
+  
+  .md-chip-icon {
+	display: block;
+	float: left;
+	background: #009587;
+	width: 32px;
+	border-radius: 50%;
+	text-align: center;
+	color: white;
+	margin: 0 8px 0 -12px;
+  }
+  
+  .md-chips {
+	/* padding: 12px 0; */
+  }
+
+  .md-chips .md-chip {
+	margin: 0 5px 3px 0;
+  }
+  
+  .md-chip-raised {
+	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+  }
+
+
+
+
+
+  /* 
+  
+ 
+ TOOLTIP
+ 
+  */
+
+
+  /* this is a _demo_ container. remember the importance of relative and absolute positioning */
+.tooltip-container {
+    position: relative;
+    display: flex;
+    place-content: center;
+	cursor: pointer;
+}
+
+/* styling of the tooltip display */
+p.tooltip-text {
+    display: none;
+    position: absolute;
+    top: -60px;
+    z-index: 1;
+    background: #59C36A;
+    padding: 8px;
+    font-size: 1rem;
+    color: #fff;
+    border-radius: 2px;
+    animation: fadeIn 0.6s;
+}
+
+/* optional styling to add a "wedge" to the tooltip */
+p.tooltip-text:before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -8px;
+  border: 8px solid transparent;
+  border-top: 8px solid #59C36A;
+}
+
+@keyframes fadeIn {
+ from {
+   opacity: 0;
+ }
+ to {
+   opacity: 1;
+ }
+}
+
+
+.dot {
+	width:10px; margin-right: 10px; font-size:3rem; color: #59C36A; margin-top: -10px;
+}
+
+.dot-tooltip {
+	width: 70px;
+    margin-top: 30px;
+    margin-left: -10px;
+}
+
+.comment-tooltip {
+	width: 100px;
+    margin-top: 10px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* 
+SPINNER
+*/
+
+.load-container {
+	width:100%;
+	display:flex;
+	justify-content: center;
+  }
+.lds-dual-ring {
+	display: inline-block;
+	width: 80px;
+	height: 80px;
+  }
+  .lds-dual-ring:after {
+	content: " ";
+	display: block;
+	width: 64px;
+	height: 64px;
+	margin: 8px;
+	border-radius: 50%;
+	border: 6px solid #fff;
+	border-color: #fff transparent #fff transparent;
+	animation: lds-dual-ring 1.2s linear infinite;
+  }
+  @keyframes lds-dual-ring {
+	0% {
+	  transform: rotate(0deg);
+	}
+	100% {
+	  transform: rotate(360deg);
+	}
+  }
+  
+
+
+
+.adadot{
+	position: fixed;
+				bottom: 0;
+				right: 0;
+				z-index: 10;
+				font-size: 10px;
+				color: #59C36A;
+}
