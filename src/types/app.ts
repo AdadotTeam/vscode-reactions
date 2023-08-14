@@ -20,24 +20,26 @@ export type Line = {
     result: number;
 };
 
-export interface LineAttatchedCommit extends FileAttatchedCommit {
+export interface LineAttachedCommit extends FileAttachedCommit {
     line: Line;
 }
 
-export interface FileAttatchedCommit {
+export interface FileAttachedCommit {
     commit: Commit;
     filename: string;
 }
 
 export type PropertiesMap = {
-	ignoreWhitespace: boolean;
 	inlineMessageEnabled: boolean;
 	inlineMessageMargin: number;
 	inlineMessageNoCommit: string;
+    inlineProminentReactionsAmount: number;
+    statusBarReactionsEnabled: boolean;
 	statusBarMessageNoCommit: string;
 	statusBarProminentReactions: number;
 	newReactionNotificationsEnabled: boolean;
-	notifyOnlyOnMyLines: boolean;
+    newReactionNotificationsOnlyOnMyLines: boolean;
+    reactionsFeedEnabled: boolean;
 };
 
 export const getProperty = <Key extends keyof PropertiesMap>(

@@ -1,4 +1,4 @@
-import { Commit, CommitAuthor, FileAttatchedCommit, Line, LineAttatchedCommit } from "../types/app";
+import { Commit, CommitAuthor, FileAttachedCommit, Line, LineAttachedCommit } from "../types/app";
 import { split } from "./split";
 
 
@@ -26,7 +26,7 @@ const newCommitInfo = (hash: string): Commit => ({
 
 const newLocationAttatchedCommit = (
 	commitInfo: Commit,
-): FileAttatchedCommit => ({
+): FileAttachedCommit => ({
 	commit: commitInfo,
 	filename: "",
 });
@@ -108,10 +108,10 @@ function* processCoverage(coverage: string): Generator<Line> {
 }
 
 function* commitFilter(
-	fileAttatched: FileAttatchedCommit | undefined,
+	fileAttatched: FileAttachedCommit | undefined,
 	lines: Generator<Line> | undefined,
 	registry: CommitRegistry,
-): Generator<LineAttatchedCommit> {
+): Generator<LineAttachedCommit> {
 	if (fileAttatched === undefined || lines === undefined) {
 		return;
 	}
@@ -129,8 +129,8 @@ function* commitFilter(
 export async function* processChunk(
 	dataChunk: Buffer,
 	commitRegistry: CommitRegistry,
-): AsyncGenerator<LineAttatchedCommit, void> {
-	let commitLocation: FileAttatchedCommit | undefined;
+): AsyncGenerator<LineAttachedCommit, void> {
+	let commitLocation: FileAttachedCommit | undefined;
 	let coverageGenerator: Generator<Line> | undefined;
 
 	for await (const [key, value] of splitChunk(dataChunk)) {
@@ -156,7 +156,7 @@ export async function* processChunk(
 
 export async function* processStdout(
 	data: AsyncIterable<Buffer> | null,
-): AsyncGenerator<LineAttatchedCommit, void> {
+): AsyncGenerator<LineAttachedCommit, void> {
 	const commitRegistry: CommitRegistry = new Map();
 	for await (const chunk of data ?? []) {
 		yield* processChunk(chunk, commitRegistry);

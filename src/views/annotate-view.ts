@@ -31,7 +31,6 @@ export class AnnotateView {
         editor: TextEditor,
         details?: Map<string, Details>
     ) {
-
         if (
             evaluateMapEquality(this.blameCache, fileBlame) &&
             evaluateMapEquality(this.fileReactionsCache, fileReactions) &&
@@ -58,7 +57,6 @@ export class AnnotateView {
         const entries = Array.from(fileBlame?.entries()).sort((a, b) => distance(a[0], renderFrom) - distance(b[0], renderFrom));
         const shownReactions: { fileName: string; reaction: StoreLineReaction }[] = [];
         for (const [key, value] of entries) {
-            // this.removeLineDecoration(key-1);
             let reaction: StoreLineReaction;
             if (!fileReactions) {
                 reaction = {...EMPTY_LINE_REACTION};

@@ -4,6 +4,7 @@ import {FeedViewProvider} from './views/feed-view';
 import {ReactionEmojis} from "./types/app";
 
 import {APP_HANDLE} from "./util/constants";
+import {Logger} from "./util/logger";
 
 const registerCommand = (subscriptions: ExtensionContext['subscriptions'])=>(name: string, callback: (...args: any[]) => any) => {
     subscriptions.push(commands.registerCommand(`${APP_HANDLE}.${name}`, callback));
@@ -11,9 +12,10 @@ const registerCommand = (subscriptions: ExtensionContext['subscriptions'])=>(nam
 
 export async function activate({subscriptions, extensionUri}: ExtensionContext) {
 
-    const provider = new FeedViewProvider(extensionUri);
+    const app = new App(extensionUri);
 
-    const app = new App(provider);
+    subscriptions.push(app);
+    subscriptions.push(Logger.getInstance());
 
     Object.keys(ReactionEmojis).forEach(emojiName =>{
         registerCommand(subscriptions)(emojiName, app.registerReaction.bind(app));
@@ -24,5 +26,5 @@ export async function activate({subscriptions, extensionUri}: ExtensionContext) 
 
     registerCommand(subscriptions)('annotate', app.toggleAnnotations.bind(app));
 
-    subscriptions.push(window.registerWebviewViewProvider(FeedViewProvider.viewType, provider));
+    subscriptions.push(window.registerWebviewViewProvider(FeedViewProvider.viewType, app.feedViewProvider));
 }

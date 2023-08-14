@@ -29,15 +29,15 @@ import hash from "../util/hash";
 import {EMPTY_LINE_REACTION} from "../util/constants";
 import {getFileName} from "../util/file-name";
 import {FeedViewProvider} from "../views/feed-view";
+import store from "../util/store";
 
 export type NewReactionEvent = ProjectReactionsResponse['reactions'];
 
 type NewReactionEventCallbackFunction = (event: NewReactionEvent) => void;
 
 export class WS {
-    private activeWorkspaceEmailMappring = new Map<string, string>();
+    private activeWorkspaceEmailMapping = new Map<string, string>();
     private activeSockets = new Map<string, WebSocket>();
-    public workspaceInfo = new Map<string, ProjectInfoResponse['projects'][number]>();
     private lineReactions = new Map<string, StoreLineReaction>();
     private reactions = new Map<string, typeof this.lineReactions>();
     private lineReactionsTemp = new Map<string, StoreLineReaction>();
@@ -66,7 +66,7 @@ export class WS {
 
         await this.waitForDataInit(workspaceFolder);
 
-        const projectId = this.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
+        const projectId = store.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
         const lineReactions = this.USE_TEMP ? this.reactionsTemp.get(`${projectId}-${fileName}`) : this.reactions.get(`${projectId}-${fileName}`);
         if (!lineReactions) {
             return {...EMPTY_LINE_REACTION};
@@ -80,7 +80,7 @@ export class WS {
             return undefined;
         }
         await this.waitForDataInit(workspaceFolder);
-        const projectId = this.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
+        const projectId = store.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
         return this.reactions.get(`${projectId}-${getFileName(workspaceFolder, fileName)}`);
     }
 
@@ -158,7 +158,7 @@ export class WS {
             if (parsedData.type === 'projects') {
                 const projects = (parsedData as ProjectInfoResponse).projects;
                 projects.forEach(project => {
-                    this.workspaceInfo.set(project.location_hash, project);
+                    store.workspaceInfo.set(project.location_hash, project);
                 });
             } else if (parsedData.type === 'init-reactions') {
                 const projectIdFiles: string[] = [];
@@ -198,9 +198,7 @@ export class WS {
                 const reactions = (parsedData as ProjectReactionsResponse).reactions;
                 this.USE_TEMP = false;
                 this.addReactions(reactions);
-                if (getProperty("newReactionNotificationsEnabled")) {
-                    this.onNewReactionCallback(reactions);
-                }
+                this.onNewReactionCallback(reactions);
                 this.updateAppViewCallback();
                 const newIds: string[] = [];
                 reactions.forEach(reaction => {
@@ -233,7 +231,7 @@ export class WS {
 
     // TODO change this to be per project
     waitForDataInit(workspace: WorkspaceFolder) {
-        const emailHash = this.activeWorkspaceEmailMappring.get(workspace.uri.fsPath);
+        const emailHash = this.activeWorkspaceEmailMapping.get(workspace.uri.fsPath);
         this.activeSockets.get(emailHash as string) as WebSocket;
         return new Promise((res, rej) => {
             if (this.WS_INIT) {
@@ -273,7 +271,7 @@ export class WS {
     }
 
     waitForConnection(workspace: WorkspaceFolder) {
-        const emailHash = this.activeWorkspaceEmailMappring.get(workspace.uri.fsPath);
+        const emailHash = this.activeWorkspaceEmailMapping.get(workspace.uri.fsPath);
         const ws = this.activeSockets.get(emailHash as string) as WebSocket;
         return this.waitForWSConnection(ws);
     }
@@ -310,7 +308,7 @@ export class WS {
 
 
     async enqueue(workspace: WorkspaceFolder, message: ProjectOpenEvent | NewReactionAddEvent | ReactionStatusEvent | ReactionDetailsRequest, attempts: number = 0): Promise<void> {
-        const emailHash = this.activeWorkspaceEmailMappring.get(workspace.uri.fsPath);
+        const emailHash = this.activeWorkspaceEmailMapping.get(workspace.uri.fsPath);
         if (emailHash) {
             await this.waitForConnection(workspace);
             const ws = this.activeSockets.get(emailHash);
@@ -344,7 +342,7 @@ export class WS {
             if (userInfo.email) {
                 const emailHash = hash.getEmailHash(userInfo.email);
                 this.open(folder, emailHash);
-                this.activeWorkspaceEmailMappring.set(folderPath, emailHash);
+                this.activeWorkspaceEmailMapping.set(folderPath, emailHash);
                 const remoteUrl = await getRemoteUrl();
                 const branchName = await getCurrentBranch(folderPath);
                 const locationHash = hash.getWorkspaceLocationHash(folderPath);

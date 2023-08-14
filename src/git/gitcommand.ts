@@ -179,9 +179,9 @@ export const blameProcess = (realpathFileName: string, contents?: string): Child
 		realpathFileName
 	];
 
-	if (getProperty("ignoreWhitespace")) {
-		args.splice(1, 0, "-w");
-	}
+	// if (getProperty("ignoreWhitespace")) {
+	// 	args.splice(1, 0, "-w");
+	// }
 
 	if(contents){
 		args.splice(3, 0, '--contents');

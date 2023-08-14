@@ -1,6 +1,6 @@
 import {promises} from "node:fs";
 import {Blame, File} from "./git/file";
-import {LineAttatchedCommit} from "./types/app";
+import {LineAttachedCommit} from "./types/app";
 import {isGitTracked} from "./git/gitcommand";
 import {Logger} from "./util/logger";
 
@@ -8,7 +8,7 @@ type Files =
     | undefined
     | File;
 
-export class Blamer {
+class Blamer {
     private readonly files = new Map<string, Files>();
 
     public async file(fileName: string): Promise<Blame | undefined> {
@@ -18,7 +18,7 @@ export class Blamer {
     public async getLine(
         fileName: string,
         lineNumber: number,
-    ): Promise<LineAttatchedCommit | undefined> {
+    ): Promise<LineAttachedCommit | undefined> {
         const commitLineNumber =
             lineNumber + 1;
         const blameInfo = await this.get(fileName);
@@ -76,3 +76,6 @@ export class Blamer {
         Logger.info(`Will not blame '${fileName}'. Outside the current workspace.`);
     }
 }
+
+const blame = new Blamer();
+export default blame

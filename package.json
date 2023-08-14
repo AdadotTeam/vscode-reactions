@@ -156,6 +156,16 @@
           "default": "Not Committed Yet",
           "description": "Customize the inline message"
         },
+        "code-reactions.inlineProminentReactionsAmount": {
+          "type": "number",
+          "default": 2,
+          "description": "The amount of reactions that will be shown on inline reactions"
+        },
+        "code-reactions.statusBarReactionsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the status bar reactions exist"
+        },
         "code-reactions.statusBarMessageNoCommit": {
           "type": "string",
           "default": "Not Committed Yet",
@@ -164,22 +174,22 @@
         "code-reactions.statusBarProminentReactions": {
           "type": "number",
           "default": 2,
-          "description": "Customize the number of status bar prominent reactions"
+          "description": "The amount of reactions (without the ➕) that will be shown on the status bar reactions"
         },
         "code-reactions.newReactionNotificationsEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable received new reaction notifications"
         },
-        "code-reactions.notifyOnlyOnMyLines": {
+        "code-reactions.newReactionNotificationsOnlyOnMyLines": {
           "type": "boolean",
           "default": false,
           "description": "Get notifications for reactions that happened only on lines you have authored"
         },
-        "code-reactions.ignoreWhitespace": {
+        "code-reactions.reactionsFeedEnabled": {
           "type": "boolean",
           "default": true,
-          "description": "Whether the blame ignores whitespace when comparing the parent’s version and the child’s to find where the lines came from."
+          "description": "Whether the reactions feed panel exists"
         }
       }
     }

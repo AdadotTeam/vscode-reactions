@@ -1,18 +1,6 @@
-import {
-	Command,
-	Disposable,
-	Position,
-	Range,
-	StatusBarAlignment,
-	StatusBarItem,
-	TextEditorDecorationType,
-	ThemeColor,
-	window,
-	workspace,
-} from "vscode";
+import {Command, Disposable, StatusBarAlignment, StatusBarItem, window, workspace,} from "vscode";
 import {Details, getProperty, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
-import {getActiveTextEditor, PartialTextEditor} from "../util/vs-code";
-import {toHoverMarkdown, toInlineTextView} from "../util/textdecorator";
+import {PartialTextEditor} from "../util/vs-code";
 import {StatusBarReaction} from "./status-bar-reaction";
 
 import {APP_HANDLE} from "../util/constants";
@@ -22,14 +10,12 @@ const defaultReactions: (ValueOf<typeof ReactionEmojis>)[] = Object.values(React
 export class StatusBarView {
 	private statusBars: StatusBarReaction[] = [];
 	private readonly statusBarMore: StatusBarItem;
-	private readonly decorationType: TextEditorDecorationType;
 	private readonly configChange: Disposable;
 	public showingMore: boolean = false;
 	private currentProminentReactions: (keyof StoreLineReaction)[] = defaultReactions.slice(0, getProperty("statusBarProminentReactions"));
 	private timeout?: NodeJS.Timeout;
 
 	constructor() {
-		this.decorationType = window.createTextEditorDecorationType({});
 		this.statusBars = this.createStatusBarItem();
 		this.statusBarMore = window.createStatusBarItem(
 			StatusBarAlignment.Right,
@@ -63,39 +49,6 @@ export class StatusBarView {
 		});
 
 		return bars;
-	}
-
-	private createLineDecoration(text: string, editor: PartialTextEditor, details?: Details[]): void {
-		if (!getProperty("inlineMessageEnabled")) {
-			return;
-		}
-		const margin = getProperty("inlineMessageMargin");
-		const decorationPosition = new Position(
-			editor.selection.active.line,
-			Number.MAX_SAFE_INTEGER,
-		);
-
-		this.removeLineDecoration();
-		
-		editor.setDecorations?.(this.decorationType, [
-			{
-				hoverMessage: toHoverMarkdown(details),
-				renderOptions: {
-					after: {
-						contentText: text,
-						margin: `0 0 0 ${margin}rem`,
-						color: new ThemeColor("editorCodeLens.foreground"),
-					},
-				},
-				range: new Range(decorationPosition, decorationPosition),
-			},
-		]);
-
-	}
-
-	private removeLineDecoration(): void {
-		const editor = getActiveTextEditor();
-		editor?.setDecorations?.(this.decorationType, []);
 	}
 
 	private prominentReactions(lineReactions: StoreLineReaction | undefined):(keyof StoreLineReaction)[] {
@@ -144,9 +97,6 @@ export class StatusBarView {
 		const prominentReactions = this.prominentReactions(lineReactions);
 		if (uncommitted) {
 			this.showOnlyOne(getProperty("statusBarMessageNoCommit"), 'Can not react on an uncommitted line!');
-			if (editor) {
-				this.createLineDecoration(getProperty("inlineMessageNoCommit"), editor);
-			}
 		} else if (!lineReactions) {
 			this.clear();
 		} else {
@@ -164,9 +114,6 @@ export class StatusBarView {
 				}
 			});
 			this.renderMore(this.showingMore ? '➖' : '➕');
-			if (editor) {
-				this.createLineDecoration(toInlineTextView(lineReactions, prominentReactions), editor, details);
-			}
 		}
 	}
 
@@ -188,7 +135,6 @@ export class StatusBarView {
 			bar.hide();
 		});
 		this.renderMore('');
-		this.removeLineDecoration();
 	}
 
 	public activity(): void {
@@ -196,7 +142,6 @@ export class StatusBarView {
 	}
 
 	public dispose(): void {
-		this.decorationType.dispose();
 		this.configChange.dispose();
 	}
 

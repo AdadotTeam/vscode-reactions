@@ -1,7 +1,7 @@
 import {ChildProcess} from "node:child_process";
 import {realpath} from "node:fs/promises";
 import {relative} from "node:path";
-import {LineAttatchedCommit} from "../types/app";
+import {LineAttachedCommit} from "../types/app";
 import {Logger} from "../util/logger";
 import {blameProcess} from "./gitcommand";
 import {processStderr, processStdout} from "../util/std-process";
@@ -9,7 +9,7 @@ import {TextDocument, workspace} from "vscode";
 import {createHash} from "node:crypto";
 
 
-export type Blame = Map<number, LineAttatchedCommit | undefined>;
+export type Blame = Map<number, LineAttachedCommit | undefined>;
 
 export class File {
     private process?: ChildProcess;
@@ -34,7 +34,7 @@ export class File {
     private async* run(
         realFileName: string,
         document: TextDocument
-    ): AsyncGenerator<LineAttatchedCommit> {
+    ): AsyncGenerator<LineAttachedCommit> {
 
         this.process = blameProcess(realFileName, document.isDirty ? document.getText() : undefined);
 

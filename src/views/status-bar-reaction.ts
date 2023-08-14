@@ -52,7 +52,7 @@ export class StatusBarReaction {
                     // @ts-ignore
                     command: `${APP_HANDLE}.${Object.keys(ReactionEmojis).find(name => ReactionEmojis[name] === this.emoji)}`,
                     title: `Code Reactions: ${this.emoji}`,
-                    // @ts-ignorexxa
+                    // @ts-ignore
 					arguments: [textEditor.document, workspaceFolder, textEditor.selections, this.emoji]
 				};
 			}

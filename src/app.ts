@@ -1,7 +1,5 @@
 import {
     Disposable,
-    Position,
-    Range,
     Selection,
     TextDocument,
     TextEditor,
@@ -11,7 +9,7 @@ import {
     workspace,
 } from "vscode";
 import {randomUUID} from "crypto";
-import {Blamer} from "./blame";
+import blame from "./blame";
 import {StatusBarView} from "./views/status-bar-view";
 import {Document, getActiveTextEditor, getFilePosition, NO_FILE_OR_PLACE, validEditor} from "./util/vs-code";
 import {WS} from "./connection/ws";
@@ -19,9 +17,6 @@ import {
     ReactionEmojis,
     ReactionAddEvent,
     StoreLineReaction,
-    ValueOf,
-    getProperty,
-    ProjectInfo,
     ReactionStatusEvent,
     Details
 } from "./types/app";
@@ -33,27 +28,30 @@ import hash from "./util/hash";
 import {AnnotateView} from "./views/annotate-view";
 import {EMPTY_LINE_REACTION} from "./util/constants";
 import {getFileName} from "./util/file-name";
-import {resolve} from "path";
 import {FeedViewProvider} from "./views/feed-view";
+import {InlineView} from "./views/inline-view";
+import store from "./util/store";
+import {NotificationView} from "./views/notification-view";
 
 export class App {
-    private readonly disposable?: Disposable;
-    private readonly blame: Blamer;
+    private readonly disposable: Disposable;
     private readonly statusBarView: StatusBarView;
+    private readonly inlineView: InlineView;
     private readonly headWatcher: HeadWatch;
     private readonly logWatcher: LogWatch;
     private ws: WS;
-    private feedViewProvider: FeedViewProvider;
+    public feedViewProvider: FeedViewProvider;
     private readonly annotateView: AnnotateView;
     private existingReactions: Set<string> = new Set();
     private seenReactions: Set<string> = new Set();
 	private readonly configChange: Disposable;
 
-    constructor(feedViewProvider: FeedViewProvider) {
+    constructor(extensionUri: Uri) {
+        const feedViewProvider = new FeedViewProvider(extensionUri);
         this.feedViewProvider = feedViewProvider;
         this.ws = new WS(this.updateView.bind(this), feedViewProvider);
-        this.blame = new Blamer();
-        this.statusBarView = new StatusBarView(); 
+        this.statusBarView = new StatusBarView();
+        this.inlineView = new InlineView();
         this.headWatcher = new HeadWatch();
         this.logWatcher = new LogWatch();
         this.annotateView = new AnnotateView(this.onReactionShow.bind(this));
@@ -72,11 +70,12 @@ export class App {
 
     public dispose(): void {
         this.statusBarView.dispose();
-        // this.disposable.dispose();
-        this.blame.dispose();
+        this.inlineView.dispose();
+        this.disposable.dispose();
+        blame.dispose();
         this.headWatcher.dispose();
         this.logWatcher.dispose();
-		// this.configChange.dispose();
+		this.configChange.dispose();
     }
 
     private setupListeners(): Disposable {
@@ -90,100 +89,12 @@ export class App {
         this.ws.onReconnect(this.updateView.bind(this));
 
         this.ws.onNewReactions(async (reactions) => {
-            const reactionsPerFile: {
-                [file_name: string]: {
-                    [line: number]: { [emoji in ValueOf<typeof ReactionEmojis>]?: number }
-                }
-            } = {};
-            const projectIdToWorkspace: { [project_id: string]: ProjectInfo } = {};
-            await Promise.all(reactions.map(async reaction => {
-                if (reaction.your_reaction) {
-                    return;
-                }
-                if (getProperty("notifyOnlyOnMyLines")) {
-                    if (!reaction.your_line) {
-                        return;
-                    }
-                }
-
-                let workspace = projectIdToWorkspace[reaction.project_id];
-                if (!workspace) {
-                    const found = Array.from(this.ws.workspaceInfo.values()).find(value => value.id === reaction.project_id);
-                    if (found) {
-                        workspace = found;
-                    }
-                }
-                if (!workspace) {
-                    return;
-                }
-
-                projectIdToWorkspace[reaction.project_id] = workspace;
-
-
-                const workspaceLocation = hash.getWorkspaceLocation(workspace.location_hash);
-
-                if (!workspaceLocation) {
-                    return;
-                }
-
-                const filePath = resolve(workspaceLocation, reaction.file_name);
-
-                const blameInfo = await this.blame.getBlameInfo(filePath);
-                const stillThere = (Array.from(blameInfo?.values() || [])).find(lineBlame =>
-                    lineBlame?.line.source === reaction.original_line &&
-                    lineBlame?.commit.hash === reaction.original_sha
-                );
-
-                if (!stillThere) {
-                    return;
-                }
-
-                if (!reactionsPerFile[filePath]) {
-                    reactionsPerFile[filePath] = {};
-                }
-                if (!reactionsPerFile[filePath][stillThere.line.result]) {
-                    reactionsPerFile[filePath][stillThere.line.result] = {};
-                }
-                reactionsPerFile[filePath][stillThere.line.result][reaction.type] =
-                    (reactionsPerFile[filePath][stillThere.line.result][reaction.type] || 0) + 1;
-            }));
-
-            await Promise.all(Object.keys(reactionsPerFile).map(async (filePath) => {
-                let minLine = Number.MAX_SAFE_INTEGER;
-                let maxLine = 0;
-                const reactionsGot = Object.entries(reactionsPerFile[filePath]).reduce((acc, [line, curr]) => {
-                    minLine = Math.min(minLine, parseInt(line, 10) - 1);
-                    maxLine = Math.max(minLine, parseInt(line, 10) - 1);
-                    Object.keys(curr).forEach((key) => {
-                        const k = key as ValueOf<typeof ReactionEmojis>;
-                        if (!acc[k]) {
-                            acc[k] = 0;
-                        }
-                        // @ts-ignore
-                        acc[k] += curr[k];
-                    });
-                    return acc;
-                }, {} as { [emoji in ValueOf<typeof ReactionEmojis>]?: number });
-                const selection = await window.showInformationMessage(`
-				You got ${Object.keys(reactionsGot).map((key) => {
-                    const k = key as ValueOf<typeof ReactionEmojis>;
-                    return `${reactionsGot[k]} ${k}`;
-                }).join(', ')}
-				at ${filePath}
-				`, 'Go to Location', 'Cancel');
-                if (selection === 'Go to Location') {
-                    const document = await workspace.openTextDocument(filePath);
-                    const editor = await window.showTextDocument(document, 1, false);
-                    editor.selections = [new Selection(new Position(minLine, 0), new Position(maxLine, 0))];
-                    const range = new Range(new Position(minLine, 0), new Position(maxLine, 0));
-                    editor.revealRange(range);
-                }
-            }));
+            await NotificationView.onNewReactions(reactions);
         });
 
         this.headWatcher.onChange(async ({repositoryRoot, head}) => {
             this.existingReactions.clear();
-            this.blame.removeFromRepository(repositoryRoot);
+            blame.removeFromRepository(repositoryRoot);
             await this.logWatcher.onHeadChange(repositoryRoot, head);
         });
 
@@ -191,7 +102,7 @@ export class App {
             this.existingReactions.clear();
             const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(filePath));
             const fileName = getFileName(workspaceFolder, filePath);
-            this.blame.remove(filePath);
+            blame.remove(filePath);
 
             if (!workspaceFolder) {
                 return;
@@ -202,7 +113,7 @@ export class App {
                 for (const [key, value] of fileReactions.entries()) {
                     const line = parseInt(key.split('_')[1], 10);
                     const commit = key.split('_')[0];
-                    const blameInfo = await this.blame.getBlameInfo(fileName);
+                    const blameInfo = await blame.getBlameInfo(fileName);
                     const stillThere = (Array.from(blameInfo?.values() || [])).find(lineBlame =>
                         lineBlame?.line.source === line &&
                         lineBlame?.commit.hash === commit
@@ -223,7 +134,7 @@ export class App {
             window.onDidChangeActiveTextEditor(async (textEditor): Promise<void> => {
                 if (validEditor(textEditor)) {
                     this.statusBarView.activity();
-                    this.blame.file(textEditor.document.fileName);
+                    blame.file(textEditor.document.fileName);
                     /**
                      * For unknown reasons files without previous or stored
                      * selection locations don't trigger the change selection
@@ -234,6 +145,7 @@ export class App {
                     changeTextEditorSelection(textEditor);
                 } else {
                     this.statusBarView.clear();
+                    this.inlineView.clear();
                 }
 
                 this.updateFileInfo(textEditor);
@@ -246,7 +158,7 @@ export class App {
                 this.updateView();
             }),
             workspace.onDidCloseTextDocument((document: Document): void => {
-                this.blame.remove(document.fileName);
+                blame.remove(document.fileName);
             }),
             workspace.onDidOpenTextDocument(async (document: TextDocument): Promise<void> => {
 
@@ -295,7 +207,7 @@ export class App {
             for (const [key, value] of fileReactions.entries()) {
                 const line = parseInt(key.split('_')[1], 10);
                 const commit = key.split('_')[0];
-                const blameInfo = await this.blame.getBlameInfo(document.fileName);
+                const blameInfo = await blame.getBlameInfo(document.fileName);
                 const stillThere = (Array.from(blameInfo?.values() || [])).find(lineBlame =>
                     lineBlame?.line.source === line &&
                     lineBlame?.commit.hash === commit
@@ -323,12 +235,14 @@ export class App {
 
         if (!validEditor(textEditor)) {
             this.statusBarView.clear();
+            this.inlineView.clear();
             return;
         }
 
         const timeout = setTimeout(() => {
             if (!this.ws.ERROR) {
                 this.statusBarView.clear();
+                this.inlineView.clear();
                 this.statusBarView.activity();
             }
         }, 50);
@@ -361,7 +275,7 @@ export class App {
             const allLines = Array.from({length: end - start + 1}).map((_, i) => i + start);
             linesSelected += allLines.length;
             for (const line of allLines) {
-                const lineAware = await this.blame.getLine(
+                const lineAware = await blame.getLine(
                     textEditor.document.fileName,
                     line
                 );
@@ -411,6 +325,7 @@ export class App {
                 this.statusBarView.setError();
             } else if (onlyLastLineSelected) {
                 this.statusBarView.set(false, undefined, textEditor, linesSelected);
+                this.inlineView.set(false, undefined, textEditor, linesSelected);
             } else {
                 let details: Details[] = [];
                 Array.from(linesReactions.ids).forEach(id => {
@@ -419,13 +334,14 @@ export class App {
                     }
                 });
                 this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
+                this.inlineView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
             }
         } else {
             return this.updateView();
         }
 
         if (this.annotateView.annotateIsOn) {
-            const fullBlame = await this.blame.getBlameInfo(textEditor.document.fileName);
+            const fullBlame = await blame.getBlameInfo(textEditor.document.fileName);
             const lineReactions = await this.ws.getFileReactions(workspace.getWorkspaceFolder(Uri.file(textEditor.document.fileName)), textEditor.document.fileName);
             await this.annotateView.createFileDecoration(fullBlame, lineReactions, textEditor, this.ws.detailsMap);
         } else {
@@ -437,10 +353,9 @@ export class App {
         }
 
         if (workspaceFolder) {
-            const fullBlame = await this.blame.getBlameInfo(textEditor.document.fileName);
+            const fullBlame = await blame.getBlameInfo(textEditor.document.fileName);
             this.feedViewProvider?.setBlame(workspaceFolder, textEditor.document.fileName, fullBlame);
         }
-
 
     }
 
@@ -577,13 +492,13 @@ export class App {
 
             const allLines = Array.from({length: end - start + 1}).map((_, i) => i + start);
             await Promise.all(allLines.map(async line => {
-                const lineAware = await this.blame.getLine(
+                const lineAware = await blame.getLine(
                     document.fileName,
                     line,
                 );
                 const fileHead = await this.headWatcher.getFileHead(document.fileName);
                 const fileCommit = await this.logWatcher.getCommit(document.fileName);
-                const projectId = this.ws.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
+                const projectId = store.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
                 if (lineAware && projectId) {
                     lineReactions.push({
                         project_id: projectId,
