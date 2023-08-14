@@ -8,7 +8,7 @@ export const getProminentReactions = (lineReactions: StoreLineReaction | undefin
     }
     const keysSorted = Object.values(ReactionEmojis)
         .filter(key => lineReactions[key]>0)
-        .sort((a,b)=>lineReactions[a]-lineReactions[b]);
+        .sort((a,b)=>lineReactions[b] - lineReactions[a]);
 
     if(keysSorted.length < prominentReactionsLimit) {
         const allReactions = [
@@ -18,4 +18,4 @@ export const getProminentReactions = (lineReactions: StoreLineReaction | undefin
         return allReactions.slice(0, prominentReactionsLimit) as (keyof StoreLineReaction)[];
     }
     return keysSorted.slice(0, prominentReactionsLimit) as (keyof StoreLineReaction)[];
-}
+};
