@@ -260,7 +260,7 @@ export class App {
 
         const before = getFilePosition(textEditor);
 
-        let linesReactions = {...EMPTY_LINE_REACTION};
+        let linesReactions = EMPTY_LINE_REACTION();
         let uncommitted = true;
         let linesSelected = 0;
         let onlyLastLineSelected = false;
@@ -520,8 +520,10 @@ export class App {
                         original_timestamp: lineAware.commit.author.timestamp || lineAware.commit.committer.timestamp,
                         author_email_sha: hash.getEmailHash(lineAware.commit.author.mail),
                         author_name: lineAware.commit.author.name,
+                        author_tz: lineAware.commit.author.tz,
                         committer_email_sha: hash.getEmailHash(lineAware.commit.committer.mail),
                         committer_name: lineAware.commit.committer.name,
+                        committer_tz: lineAware.commit.committer.tz,
                         file_name: lineAware?.filename,
                         language: document.languageId,
                         reaction_group_id

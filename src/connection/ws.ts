@@ -29,7 +29,7 @@ import {APP_HANDLE, EMPTY_LINE_REACTION} from "../util/constants";
 import {getFileName} from "../util/file-name";
 import {FeedViewProvider} from "../views/feed-view";
 import store from "../util/store";
-import {getProperty} from "../util/configuration";
+import {UserInfo} from "../types/git";
 
 export type NewReactionEvent = ProjectReactionsResponse['reactions'];
 
@@ -61,7 +61,7 @@ export class WS {
 
     async getLineReactions(workspaceFolder?: WorkspaceFolder, fileName?: string, originalSha?: string, originalLine?: number): Promise<StoreLineReaction> {
         if (!workspaceFolder || !fileName || !originalSha || !originalLine) {
-            return {...EMPTY_LINE_REACTION};
+            return EMPTY_LINE_REACTION();
         }
 
         await this.waitForDataInit(workspaceFolder);
@@ -69,10 +69,10 @@ export class WS {
         const projectId = store.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
         const lineReactions = this.USE_TEMP ? this.reactionsTemp.get(`${projectId}-${fileName}`) : this.reactions.get(`${projectId}-${fileName}`);
         if (!lineReactions) {
-            return {...EMPTY_LINE_REACTION};
+            return EMPTY_LINE_REACTION();
         }
 
-        return lineReactions.get(`${originalSha}_${originalLine}`) || {...EMPTY_LINE_REACTION};
+        return lineReactions.get(`${originalSha}_${originalLine}`) || EMPTY_LINE_REACTION()
     }
 
     async getFileReactions(workspaceFolder: WorkspaceFolder | undefined, fileName: string): Promise<Map<string, StoreLineReaction> | undefined> {
@@ -88,7 +88,8 @@ export class WS {
         if (newIds.length) {
             const reactionContentRequest: ReactionDetailsRequest = {
                 action: "reaction-details",
-                reactions: newIds.map(id => ({id}))
+                reactions: newIds.map(id => ({id})),
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone
             };
             await this.enqueueWithWs(ws, reactionContentRequest);
         }
@@ -111,21 +112,29 @@ export class WS {
         if (newIds.length) {
             const reactionContentRequest: ReactionDetailsRequest = {
                 action: "reaction-details",
-                reactions: newIds.map(id => ({id}))
+                reactions: newIds.map(id => ({id})),
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone
             };
             await this.enqueue(workspaceFolder, reactionContentRequest);
         }
     }
 
-    open(folder: WorkspaceFolder, emailHash: string, retries: number = 0) {
-        const ws = new WebSocket(`ws://localhost:3003?email_hash=${emailHash}`);
-        // const ws = new WebSocket(`wss://t65omwlbx9.execute-api.eu-west-1.amazonaws.com/sit?email_hash=${emailHash}`);
+    open(folder: WorkspaceFolder, userInfo: UserInfo, retries: number = 0) {
+        const emailHash = hash.getEmailHash(userInfo.email as string);
+        // const url = new URL('ws://localhost:3003?email_hash=${emailHash}');
+        const url = new URL('wss://t65omwlbx9.execute-api.eu-west-1.amazonaws.com/sit');
+        url.searchParams.append('email_hash', emailHash);
+        if(userInfo.name){
+            url.searchParams.append('name', userInfo.name);
+        }
+
+        const ws = new WebSocket(url.toString());
         this.activeSockets.set(emailHash, ws);
 
         const reconnect = () => {
             setTimeout(() => {
                 if (!this.ERROR) {
-                    this.open.bind(this)(folder, emailHash);
+                    this.open.bind(this)(folder, userInfo);
                 }
             }, 50);
         };
@@ -134,7 +143,7 @@ export class WS {
             this.ERROR = true;
             commands.executeCommand('setContext', `${APP_HANDLE}.initialized`, false);
             setTimeout(() => {
-                this.open(folder, emailHash, retries + 1);
+                this.open(folder, userInfo, retries + 1);
             }, 10000 * retries);
             console.error(e);
         });
@@ -189,7 +198,8 @@ export class WS {
                 if (newIds.length) {
                     const reactionContentRequest: ReactionDetailsRequest = {
                         action: "reaction-details",
-                        reactions: newIds.map(id => ({id}))
+                        reactions: newIds.map(id => ({id})),
+                        tz: Intl.DateTimeFormat().resolvedOptions().timeZone
                     };
                     await this.enqueueWithWs(ws, reactionContentRequest);
                 }
@@ -213,8 +223,8 @@ export class WS {
                 reactions.forEach(reaction => {
                     this.detailsMap.set(reaction.id, reaction);
                 });
-                this.updateAppViewCallback();
                 this.feedViewProvider.addDetails(folder, this.detailsMap);
+                this.updateAppViewCallback();
             }
         });
     }
@@ -282,7 +292,7 @@ export class WS {
             const lineReactions = this.USE_TEMP ? this.lineReactionsTemp : this.lineReactions;
             const reactions = this.USE_TEMP ? this.reactionsTemp : this.reactions;
             let lineReaction = lineReactions.get(shaLine);
-            lineReaction = lineReaction || {...EMPTY_LINE_REACTION};
+            lineReaction = lineReaction || EMPTY_LINE_REACTION();
 
             if ('id' in reaction) {
                 lineReaction.ids.add(reaction.id);
@@ -341,7 +351,7 @@ export class WS {
             const userInfo = await getUserInfo(folderPath);
             if (userInfo.email) {
                 const emailHash = hash.getEmailHash(userInfo.email);
-                this.open(folder, emailHash);
+                this.open(folder, userInfo);
                 this.activeWorkspaceEmailMapping.set(folderPath, emailHash);
                 const remoteUrl = await getRemoteUrl();
                 const branchName = await getCurrentBranch(folderPath);
@@ -353,7 +363,6 @@ export class WS {
                 }
                 const projectOpenEvent: ProjectOpenEvent = {
                     "branch_name": branchName,
-                    // TODO see if we can merge default branch methods
                     default_branch_name: await getDefaultBranchName(folderPath),
                     "current_sha": currentCommitInfo.sha,
                     "current_sha_ts": currentCommitInfo.datetime,

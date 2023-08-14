@@ -25,7 +25,7 @@ export class InlineView {
 
 	public onDidChangeConfiguration(event: ConfigurationChangeEvent){
 		if (event.affectsConfiguration(configName("inlineMessageEnabled"))) {
-			if(!getProperty("statusBarReactionsEnabled")){
+			if(!getProperty("inlineMessageEnabled")){
 				this.clear();
 				this.dispose();
 			}

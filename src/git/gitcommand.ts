@@ -8,8 +8,6 @@ import { execute } from "./execcommand";
 import { getActiveTextEditor, validEditor } from "../util/vs-code";
 import { Logger } from "../util/logger";
 import { splitChunk } from "../util/std-process";
-import {getProperty} from "../util/configuration";
-
 
 
 export const getGitCommand = (): string => {
@@ -190,11 +188,6 @@ export const blameProcess = (realpathFileName: string, contents?: string): Child
 
 	Logger.info(`${getGitCommand()} ${args.join(" ")}`);
 
-	const blame= spawnSync(getGitCommand(), args, {
-		cwd: dirname(realpathFileName),
-		input: contents
-	});
-
 	const proc = spawn(getGitCommand(), args, {
 		cwd: dirname(realpathFileName)
 	});
@@ -217,24 +210,6 @@ export const getRelativePathOfActiveFile = async (): Promise<string> => {
 	const { fileName } = activeEditor.document;
 	return runGit(fileName, "ls-files", "--full-name", "--", fileName);
 };
-
-export const getDefaultBranch = async (remote: string): Promise<string> => {
-	const activeEditor = getActiveTextEditor();
-
-	if (!validEditor(activeEditor)) {
-		return "";
-	}
-
-	const rawRemoteDefaultBranch = await runGit(
-		activeEditor.document.fileName,
-		"rev-parse",
-		"--abbrev-ref",
-		`${remote}/HEAD`,
-	);
-
-	return rawRemoteDefaultBranch.split("/")[1];
-};
-
 
 export const getDefaultBranchName = async (dir: string): Promise<string> => {
 

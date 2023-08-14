@@ -79,8 +79,10 @@ export interface ReactionAddEvent {
         original_timestamp: string;
         author_email_sha: string;
         author_name: string;
+        author_tz: string;
         committer_email_sha: string;
         committer_name: string;
+        committer_tz: string;
         file_name: string;
         language: string;
         reaction_group_id: string;
@@ -108,7 +110,8 @@ export interface ReactionStatusEvent {
 
 export interface ReactionDetailsRequest {
     action: "reaction-details";
-    reactions: { id: string; }[]
+    reactions: { id: string; }[];
+    tz: string;
 }
 
 export interface ProjectInfo extends ProjectOpenEvent {

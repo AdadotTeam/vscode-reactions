@@ -68,8 +68,8 @@ export class File {
 
 
         try {
-            for await (const lineAttatchedCommit of this.run(realpathFileName, document)) {
-                this.blameInfo.set(lineAttatchedCommit.line.result, lineAttatchedCommit);
+            for await (const lineAttachedCommit of this.run(realpathFileName, document)) {
+                this.blameInfo.set(lineAttachedCommit.line.result, lineAttachedCommit);
             }
         } catch (err) {
             Logger.error(err);

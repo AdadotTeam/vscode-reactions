@@ -1,3 +1,50 @@
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+const YEAR = 365.25 * DAY;
+const MONTH = YEAR / 12;
+
+const timeUnits= [
+    ["year", YEAR],
+    ["month", MONTH],
+    ["day", DAY],
+    ["hour", HOUR],
+    ["minute", MINUTE],
+    ["second", SECOND],
+];
+
+const between = (now, compare, locale) => {
+    const diffMilliseconds = now.valueOf() - compare.valueOf();
+
+    for (const [currentUnit, scale] of timeUnits) {
+        if (diffMilliseconds > scale) {
+            return {text:new Intl.RelativeTimeFormat(locale).format(
+                -1 * Math.round(diffMilliseconds / scale),
+                currentUnit,
+            ), scale};
+        }
+    }
+
+    return {text: "right now", scale:SECOND};
+};
+
+function updateClock() {
+    const containers = document.querySelectorAll('.time-container');
+    let minRefresh = YEAR;
+
+    containers.forEach(container=>{
+        const input = container.querySelectorAll('input[name="time"]')[0];
+        const locale = container.querySelectorAll('input[name="locale"]')[0];
+        const display = container.querySelectorAll('.time')[0];
+        const ago = between(new Date(), new Date(input.value), locale);
+        minRefresh = Math.min(minRefresh, ago.scale);
+        display.innerText = ago.text;
+    });
+
+    setTimeout(updateClock, minRefresh);
+}
+
 (function () {
     // @ts-ignore
     // const vscode = acquireVsCodeApi();
@@ -29,6 +76,6 @@
         }
     }
 
-
+    updateClock();
 }());
 

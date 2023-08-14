@@ -40,7 +40,7 @@ export class AnnotateView {
         }
         this.blameCache = fileBlame && new Map(JSON.parse(JSON.stringify(Array.from(fileBlame))));
         this.fileReactionsCache = fileReactions && new Map(JSON.parse(JSON.stringify(Array.from(fileReactions))));
-        this.detailsCache = details;
+        this.detailsCache = details && new Map(JSON.parse(JSON.stringify(Array.from(details))));
         if (!fileBlame) {
             this.removeAllDecorations();
             return;
@@ -59,10 +59,10 @@ export class AnnotateView {
         for (const [key, value] of entries) {
             let reaction: StoreLineReaction;
             if (!fileReactions) {
-                reaction = {...EMPTY_LINE_REACTION};
+                reaction = EMPTY_LINE_REACTION()
 
             } else {
-                reaction = fileReactions.get(`${value?.commit.hash}_${value?.line.source}`) || {...EMPTY_LINE_REACTION};
+                reaction = fileReactions.get(`${value?.commit.hash}_${value?.line.source}`) || EMPTY_LINE_REACTION()
             }
 
             this.createLineDecoration(reaction, editor, key - 1);
