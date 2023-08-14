@@ -3,19 +3,17 @@
 > Add emoji reactions, even with comments, to any Git repo! React and see others 
 > reactions to any piece of code straight from your IDE.
 
-Code Reactions is an open-source extension for Visual Studio Code, made with love
-with a mind to give back to the community.
+Code Reactions is an open-source extension for Visual Studio Code, made to give back to the community.
 
-You see some nice piece of code? Now you can add a 👍, or maybe a 😍 if you loved it
-so much.
+You saw some nice piece of code? Now you can add a 👍, or maybe even a 😍 and spread the love.
 
-This sees like it might be a bug there? Give it a 🐛 with a comment on your finding 
-and come back to fix it.
+It seems like there might be a bug there? Give it a 🐛 with a comment on your finding 
+and come back to fix it when you get the chance.
 
-This code really has a smell... I think it might justify a 💩. We should at some point
-come around to scooping all of these.
+This code feels like it has quite a smell... You think it might justify a 💩? Leave it there 
+and bring the team around to help you scoop all of these.
 
-We give you the ability to react the code, you decide how to use it!
+We give you the ability to react to any code, you decide how to use it!
 
 ## Features and how to use
 
