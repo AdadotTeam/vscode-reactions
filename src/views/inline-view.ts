@@ -1,24 +1,35 @@
-import {Disposable, Position, Range, TextEditorDecorationType, ThemeColor, window, workspace,} from "vscode";
-import {Details, getProperty, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
+import {
+	ConfigurationChangeEvent,
+	Disposable,
+	Position,
+	Range,
+	TextEditorDecorationType,
+	ThemeColor,
+	window,
+	workspace,
+} from "vscode";
+import {Details, StoreLineReaction} from "../types/app";
 import {getActiveTextEditor, PartialTextEditor} from "../util/vs-code";
 import {toHoverMarkdown, toInlineTextView} from "../util/textdecorator";
 
 import {APP_HANDLE} from "../util/constants";
-
-const defaultReactions: (ValueOf<typeof ReactionEmojis>)[] = Object.values(ReactionEmojis);
+import {getProminentReactions} from "../util/prominent-reactions";
+import {configName, getProperty} from "../util/configuration";
 
 export class InlineView {
 	private readonly decorationType: TextEditorDecorationType;
-	private readonly configChange: Disposable;
-	private currentProminentReactions: (keyof StoreLineReaction)[] = defaultReactions.slice(0, getProperty("statusBarProminentReactions"));
 
 	constructor() {
 		this.decorationType = window.createTextEditorDecorationType({});
-		this.configChange = workspace.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration(APP_HANDLE)) {
-				//
+	}
+
+	public onDidChangeConfiguration(event: ConfigurationChangeEvent){
+		if (event.affectsConfiguration(configName("inlineMessageEnabled"))) {
+			if(!getProperty("statusBarReactionsEnabled")){
+				this.clear();
+				this.dispose();
 			}
-		});
+		}
 	}
 
 	private createLineDecoration(text: string, editor?: PartialTextEditor, details?: Details[]): void {
@@ -55,28 +66,6 @@ export class InlineView {
 		editor?.setDecorations?.(this.decorationType, []);
 	}
 
-	private prominentReactions(lineReactions: StoreLineReaction | undefined):(keyof StoreLineReaction)[] {
-		const prominentReactionsLimit = getProperty("statusBarProminentReactions");
-		if(!lineReactions) {
-			this.currentProminentReactions = defaultReactions.slice(0, prominentReactionsLimit);
-			return this.currentProminentReactions;
-		}
-		const keysSorted = Object.values(ReactionEmojis)
-			.filter(key => lineReactions[key]>0)
-			.sort((a,b)=>lineReactions[a]-lineReactions[b]);
-
-		if(keysSorted.length < prominentReactionsLimit) {
-			const allReactions = [
-				...keysSorted,
-				...defaultReactions.filter(r=> !keysSorted.includes(r))
-			];
-			this.currentProminentReactions = allReactions.slice(0, prominentReactionsLimit) as (keyof StoreLineReaction)[];
-			return this.currentProminentReactions;
-		}
-		this.currentProminentReactions = keysSorted.slice(0, prominentReactionsLimit) as (keyof StoreLineReaction)[];
-		return this.currentProminentReactions;
-	}
-
 	public set(
 		uncommitted: boolean,
 		lineReactions: StoreLineReaction | undefined,
@@ -84,22 +73,27 @@ export class InlineView {
 		linesSelected: number,
 		details?: Details[]
 	): void {
+		if(!getProperty("inlineMessageEnabled")){
+			return;
+		}
 		if(!lineReactions){
 			this.clear();
 		}else if(uncommitted){
 				this.createLineDecoration(getProperty("inlineMessageNoCommit"), editor);
 		}else{
-			const prominentReactions = this.prominentReactions(lineReactions);
+			const prominentReactions = getProminentReactions(lineReactions, getProperty("inlineProminentReactionsAmount"));
 			this.createLineDecoration(toInlineTextView(lineReactions, prominentReactions), editor, details);
 		}
 	}
 
 	public clear(): void {
+		if(!getProperty("inlineMessageEnabled")){
+			return;
+		}
 		this.removeLineDecoration();
 	}
 
 	public dispose(): void {
 		this.decorationType.dispose();
-		this.configChange.dispose();
 	}
 }

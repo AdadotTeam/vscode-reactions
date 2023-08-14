@@ -1,31 +1,42 @@
-import {Command, Disposable, StatusBarAlignment, StatusBarItem, window, workspace,} from "vscode";
-import {Details, getProperty, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
+import {Command, ConfigurationChangeEvent, StatusBarAlignment, StatusBarItem, window,} from "vscode";
+import {ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
 import {PartialTextEditor} from "../util/vs-code";
 import {StatusBarReaction} from "./status-bar-reaction";
 
 import {APP_HANDLE} from "../util/constants";
+import {getProminentReactions} from "../util/prominent-reactions";
+import {configName, getProperty} from "../util/configuration";
 
 const defaultReactions: (ValueOf<typeof ReactionEmojis>)[] = Object.values(ReactionEmojis);
 
 export class StatusBarView {
 	private statusBars: StatusBarReaction[] = [];
-	private readonly statusBarMore: StatusBarItem;
-	private readonly configChange: Disposable;
+	private statusBarMore: StatusBarItem;
 	public showingMore: boolean = false;
-	private currentProminentReactions: (keyof StoreLineReaction)[] = defaultReactions.slice(0, getProperty("statusBarProminentReactions"));
+	private currentProminentReactions: (keyof StoreLineReaction)[] = defaultReactions.slice(0, getProperty("statusBarProminentReactionsAmount"));
 	private timeout?: NodeJS.Timeout;
 
 	constructor() {
 		this.statusBars = this.createStatusBarItem();
 		this.statusBarMore = window.createStatusBarItem(
 			StatusBarAlignment.Right,
-			this.statusBars.length - getProperty("statusBarProminentReactions"),
+			this.statusBars.length - getProperty("statusBarProminentReactionsAmount"),
 		);
-		this.configChange = workspace.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration(APP_HANDLE)) {
-				this.createStatusBarItem();
+	}
+
+	public onDidChangeConfiguration(event: ConfigurationChangeEvent){
+		if (event.affectsConfiguration(configName("statusBarReactionsEnabled"))) {
+			if(getProperty("statusBarReactionsEnabled")){
+				this.statusBars = this.createStatusBarItem();
+				this.statusBarMore = window.createStatusBarItem(
+					StatusBarAlignment.Right,
+					this.statusBars.length - getProperty("statusBarProminentReactionsAmount"),
+				);
+			}else{
+				this.clear();
+				this.dispose();
 			}
-		});
+		}
 	}
 
 	private createStatusBarItem(): StatusBarReaction[] {
@@ -51,28 +62,6 @@ export class StatusBarView {
 		return bars;
 	}
 
-	private prominentReactions(lineReactions: StoreLineReaction | undefined):(keyof StoreLineReaction)[] {
-		const prominentReactionsLimit = getProperty("statusBarProminentReactions");
-		if(!lineReactions) {
-			this.currentProminentReactions = defaultReactions.slice(0, prominentReactionsLimit);
-			return this.currentProminentReactions;
-		}
-		const keysSorted = Object.values(ReactionEmojis)
-			.filter(key => lineReactions[key]>0)
-			.sort((a,b)=>lineReactions[a]-lineReactions[b]);
-
-		if(keysSorted.length < prominentReactionsLimit) {
-			const allReactions = [
-				...keysSorted,
-				...defaultReactions.filter(r=> !keysSorted.includes(r))
-			];
-			this.currentProminentReactions = allReactions.slice(0, prominentReactionsLimit) as (keyof StoreLineReaction)[];
-			return this.currentProminentReactions;
-		}
-		this.currentProminentReactions = keysSorted.slice(0, prominentReactionsLimit) as (keyof StoreLineReaction)[];
-		return this.currentProminentReactions;
-	}
-
 	private showOnlyOne(text: string, tooltip: string, state?: 'warning' | 'error') {
 		this.statusBars.forEach((bar, i)=>{
 			if(i === 0){
@@ -87,24 +76,26 @@ export class StatusBarView {
 		uncommitted: boolean,
 		lineReactions: StoreLineReaction | undefined,
 		editor: PartialTextEditor | undefined,
-		linesSelected: number,
-		details?: Details[]
+		linesSelected: number
 	): void {
+		if(!getProperty("statusBarReactionsEnabled")){
+			return;
+		}
 		if(this.timeout){
 			clearTimeout(this.timeout);
 			this.timeout = undefined;
 		}
-		const prominentReactions = this.prominentReactions(lineReactions);
+		this.currentProminentReactions = getProminentReactions(lineReactions, getProperty("statusBarProminentReactionsAmount"));
 		if (uncommitted) {
 			this.showOnlyOne(getProperty("statusBarMessageNoCommit"), 'Can not react on an uncommitted line!');
 		} else if (!lineReactions) {
 			this.clear();
 		} else {
-			let prominentCounter = (this.statusBarMore.priority || 0)+prominentReactions.length;
-			let nonProminentCounter = defaultReactions.length - prominentReactions.length;
+			let prominentCounter = (this.statusBarMore.priority || 0)+this.currentProminentReactions.length;
+			let nonProminentCounter = defaultReactions.length - this.currentProminentReactions.length;
 
 			this.statusBars.forEach((bar)=>{
-				const prominentIndex = prominentReactions.findIndex(reaction=> reaction === bar.emoji);
+				const prominentIndex = this.currentProminentReactions.findIndex(reaction=> reaction === bar.emoji);
 				if(prominentIndex>-1){
 					bar.render(lineReactions, true, linesSelected, prominentCounter);
 					prominentCounter -=1;
@@ -113,7 +104,11 @@ export class StatusBarView {
 					nonProminentCounter -=1;
 				}
 			});
-			this.renderMore(this.showingMore ? '➖' : '➕');
+			if(getProperty("statusBarProminentReactionsAmount") < Object.values(ReactionEmojis).length){
+				this.renderMore(this.showingMore ? '➖' : '➕');
+			}else{
+				this.renderMore('');
+			}
 		}
 	}
 
@@ -122,6 +117,9 @@ export class StatusBarView {
 	}
 
 	public setError(): void {
+		if(!getProperty("statusBarReactionsEnabled")){
+			return;
+		}
 		if(!this.timeout) {
 			this.showOnlyOne(`🤔`, 'Struggling to get reactions. Will keep retrying silently', 'warning');
 			this.timeout = setTimeout(() => {
@@ -131,6 +129,9 @@ export class StatusBarView {
 	}
 
 	public clear(): void {
+		if(!getProperty("statusBarReactionsEnabled")){
+			return;
+		}
 		this.statusBars.forEach(bar=> {
 			bar.hide();
 		});
@@ -138,15 +139,20 @@ export class StatusBarView {
 	}
 
 	public activity(): void {
+		if(!getProperty("statusBarReactionsEnabled")){
+			return;
+		}
 		this.showOnlyOne("$(sync~spin) Calculating Reactions", '');
 	}
 
 	public dispose(): void {
-		this.configChange.dispose();
+		this.statusBars.forEach(bar=> {
+			bar.dispose();
+		});
+		this.statusBarMore.dispose();
 	}
 
 	private more(): Command {
-
 		return {
 			title: `${APP_HANDLE}.more`,
 			command: `${APP_HANDLE}.more`,
@@ -155,6 +161,9 @@ export class StatusBarView {
 	}
 
 	public toggleShowMore() {
+		if(!getProperty("statusBarReactionsEnabled")) {
+			return;
+		}
 		this.showingMore = !this.showingMore;
 		this.statusBars.forEach(bar => {
 			if(this.showingMore) {

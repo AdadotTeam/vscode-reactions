@@ -6,9 +6,9 @@ import { extensions } from "vscode";
 import { GitExtension, LatestCommitInfo, UserInfo } from "../types/git";
 import { execute } from "./execcommand";
 import { getActiveTextEditor, validEditor } from "../util/vs-code";
-import { getProperty } from "../types/app";
 import { Logger } from "../util/logger";
 import { splitChunk } from "../util/std-process";
+import {getProperty} from "../util/configuration";
 
 
 

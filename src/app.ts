@@ -6,7 +6,7 @@ import {
     Uri,
     WorkspaceFolder,
     window,
-    workspace,
+    workspace, commands,
 } from "vscode";
 import {randomUUID} from "crypto";
 import blame from "./blame";
@@ -26,12 +26,13 @@ import {LogWatch} from "./watchers/log-watch";
 import {getCurrentBranch, isCommitInCurrentBranch} from "./git/gitcommand";
 import hash from "./util/hash";
 import {AnnotateView} from "./views/annotate-view";
-import {EMPTY_LINE_REACTION} from "./util/constants";
+import {APP_HANDLE, EMPTY_LINE_REACTION} from "./util/constants";
 import {getFileName} from "./util/file-name";
 import {FeedViewProvider} from "./views/feed-view";
 import {InlineView} from "./views/inline-view";
 import store from "./util/store";
 import {NotificationView} from "./views/notification-view";
+import {configName, getProperty} from "./util/configuration";
 
 export class App {
     private readonly disposable: Disposable;
@@ -56,10 +57,15 @@ export class App {
         this.logWatcher = new LogWatch();
         this.annotateView = new AnnotateView(this.onReactionShow.bind(this));
 
-		this.configChange = workspace.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration("code-reactions")) {
-                console.log('e');
-			}
+		this.configChange = workspace.onDidChangeConfiguration(async (event) => {
+            if(event.affectsConfiguration(configName("reactionsFeedEnabled"))){
+                commands.executeCommand('setContext', `${APP_HANDLE}.reactionsFeedEnabled`, getProperty('reactionsFeedEnabled'));
+            }
+            await Promise.all([
+                this.statusBarView.onDidChangeConfiguration(event),
+                this.inlineView.onDidChangeConfiguration(event),
+            ]);
+            await this.updateView();
 		});
 
         this.disposable = this.setupListeners();
@@ -102,7 +108,7 @@ export class App {
             this.existingReactions.clear();
             const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(filePath));
             const fileName = getFileName(workspaceFolder, filePath);
-            blame.remove(filePath);
+            await blame.remove(filePath);
 
             if (!workspaceFolder) {
                 return;
@@ -333,7 +339,7 @@ export class App {
                         details.push(this.ws.detailsMap.get(id) as Details);
                     }
                 });
-                this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
+                this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected);
                 this.inlineView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
             }
         } else {

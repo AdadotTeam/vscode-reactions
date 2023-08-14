@@ -1,5 +1,3 @@
-import {workspace} from "vscode";
-
 export type CommitAuthor = {
     name: string;
     mail: string;
@@ -36,16 +34,10 @@ export type PropertiesMap = {
     inlineProminentReactionsAmount: number;
     statusBarReactionsEnabled: boolean;
 	statusBarMessageNoCommit: string;
-	statusBarProminentReactions: number;
+	statusBarProminentReactionsAmount: number;
 	newReactionNotificationsEnabled: boolean;
     newReactionNotificationsOnlyOnMyLines: boolean;
     reactionsFeedEnabled: boolean;
-};
-
-export const getProperty = <Key extends keyof PropertiesMap>(
-    name: Key,
-): PropertiesMap[Key] => {
-    return workspace.getConfiguration('code-reactions').get(name) as PropertiesMap[Key];
 };
 
 export interface ProjectOpenEvent {

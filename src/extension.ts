@@ -5,6 +5,7 @@ import {ReactionEmojis} from "./types/app";
 
 import {APP_HANDLE} from "./util/constants";
 import {Logger} from "./util/logger";
+import {getProperty} from "./util/configuration";
 
 const registerCommand = (subscriptions: ExtensionContext['subscriptions'])=>(name: string, callback: (...args: any[]) => any) => {
     subscriptions.push(commands.registerCommand(`${APP_HANDLE}.${name}`, callback));
@@ -27,4 +28,6 @@ export async function activate({subscriptions, extensionUri}: ExtensionContext) 
     registerCommand(subscriptions)('annotate', app.toggleAnnotations.bind(app));
 
     subscriptions.push(window.registerWebviewViewProvider(FeedViewProvider.viewType, app.feedViewProvider));
+
+    commands.executeCommand('setContext', `${APP_HANDLE}.reactionsFeedEnabled`, getProperty("reactionsFeedEnabled"));
 }

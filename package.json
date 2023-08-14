@@ -50,7 +50,8 @@
         {
           "type": "webview",
           "id": "code-reactions.feed",
-          "name": "Feed"
+          "name": "Feed",
+          "when": "code-reactions.reactionsFeedEnabled"
         }
       ]
     },
@@ -171,7 +172,7 @@
           "default": "Not Committed Yet",
           "description": "Customize the status bar message"
         },
-        "code-reactions.statusBarProminentReactions": {
+        "code-reactions.statusBarProminentReactionsAmount": {
           "type": "number",
           "default": 2,
           "description": "The amount of reactions (without the ➕) that will be shown on the status bar reactions"

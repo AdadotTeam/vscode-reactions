@@ -17,7 +17,6 @@ import {
     ReactionEmojis,
     StoreLineReaction,
     yourEmoji,
-    getProperty,
     ReactionStatusEvent,
     NewReactionAddEvent,
     ValueOf,
@@ -30,6 +29,7 @@ import {EMPTY_LINE_REACTION} from "../util/constants";
 import {getFileName} from "../util/file-name";
 import {FeedViewProvider} from "../views/feed-view";
 import store from "../util/store";
+import {getProperty} from "../util/configuration";
 
 export type NewReactionEvent = ProjectReactionsResponse['reactions'];
 
@@ -193,7 +193,7 @@ export class WS {
                     };
                     await this.enqueueWithWs(ws, reactionContentRequest);
                 }
-                this.feedViewProvider?.setReactions(folder, reactions);
+                this.feedViewProvider.setReactions(folder, reactions);
             } else if (parsedData.type === 'reactions') {
                 const reactions = (parsedData as ProjectReactionsResponse).reactions;
                 this.USE_TEMP = false;
@@ -207,14 +207,14 @@ export class WS {
                     }
                 });
                 await this.requestDetails(ws, newIds);
-                this.feedViewProvider?.addReactions(folder, reactions);
+                this.feedViewProvider.addReactions(folder, reactions);
             } else if (parsedData.type === 'details') {
                 const reactions = (parsedData as DetailsResponse).reactions;
                 reactions.forEach(reaction => {
                     this.detailsMap.set(reaction.id, reaction);
                 });
                 this.updateAppViewCallback();
-                this.feedViewProvider?.addDetails(folder, this.detailsMap);
+                this.feedViewProvider.addDetails(folder, this.detailsMap);
             }
         });
     }
