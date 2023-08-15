@@ -1,7 +1,7 @@
-import { WorkspaceFolder } from "vscode";
-import * as path from "node:path";
+import {relative, sep} from "node:path";
+import { Repo } from "./repo";
 
-export const getFileName = (workspaceFolder: WorkspaceFolder | undefined, filePath: string) => {
-    const a = path.relative(workspaceFolder?.uri.fsPath + '/', filePath);
-    return a.split(path.sep).join('/');
+export const getFileName = (repo: Repo | undefined, filePath: string) => {
+    const a = relative(repo?.root.fsPath + '/', filePath);
+    return a.split(sep).join('/');
 };

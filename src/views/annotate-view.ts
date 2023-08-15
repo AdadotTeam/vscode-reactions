@@ -1,4 +1,4 @@
-import {DecorationOptions, Range, TextEditor, TextEditorDecorationType, ThemeColor, window, workspace,} from "vscode";
+import {DecorationOptions, Range, TextEditor, TextEditorDecorationType, ThemeColor, window,} from "vscode";
 import {Details, ReactionEmojis, StoreLineReaction} from "../types/app";
 import {getActiveTextEditor} from "../util/vs-code";
 import {toAnnotationTextView, toHoverMarkdown} from "../util/textdecorator";
@@ -6,6 +6,7 @@ import {Blame} from "../git/file";
 import {EMPTY_LINE_REACTION} from "../util/constants";
 import {App} from "../app";
 import {evaluateMapEquality} from "../util/map-equality";
+import fileInfo from "../util/file-info";
 
 export class AnnotateView {
     private decorationTypes: Map<number, TextEditorDecorationType> = new Map();
@@ -25,7 +26,7 @@ export class AnnotateView {
         this.fileReactionsCache = undefined;
     }
 
-    public createFileDecoration(
+    public async createFileDecoration(
         fileBlame: Blame | undefined,
         fileReactions: Map<string, StoreLineReaction> | undefined,
         editor: TextEditor,
@@ -59,10 +60,10 @@ export class AnnotateView {
         for (const [key, value] of entries) {
             let reaction: StoreLineReaction;
             if (!fileReactions) {
-                reaction = EMPTY_LINE_REACTION()
+                reaction = EMPTY_LINE_REACTION();
 
             } else {
-                reaction = fileReactions.get(`${value?.commit.hash}_${value?.line.source}`) || EMPTY_LINE_REACTION()
+                reaction = fileReactions.get(`${value?.commit.hash}_${value?.line.source}`) || EMPTY_LINE_REACTION();
             }
 
             this.createLineDecoration(reaction, editor, key - 1);
@@ -72,9 +73,9 @@ export class AnnotateView {
                 reaction
             });
         }
-        const workspaceFolder = workspace.getWorkspaceFolder(editor.document.uri);
-        if (this.onReactionShow && workspaceFolder) {
-            this.onReactionShow(workspaceFolder, shownReactions);
+        const repo = await fileInfo.getRepoFromFileUri(editor.document.uri);
+        if (this.onReactionShow && repo) {
+            this.onReactionShow(repo, shownReactions);
         }
 
     }

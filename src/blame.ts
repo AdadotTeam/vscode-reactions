@@ -60,6 +60,15 @@ class Blamer {
         return file1?.getBlame();
     }
 
+    public async isTracked(fileName: string): Promise<boolean> {
+        if (!this.files.has(fileName)) {
+            const file = await this.create(fileName);
+            this.files.set(fileName, file);
+        }
+
+        return !!this.files.get(fileName);
+    }
+
     private async create(fileName: string): Promise<File | undefined> {
         try {
             await promises.access(fileName);
@@ -78,4 +87,4 @@ class Blamer {
 }
 
 const blame = new Blamer();
-export default blame
+export default blame;

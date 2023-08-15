@@ -1,4 +1,4 @@
-import { ChildProcess, spawn, spawnSync } from "node:child_process";
+import { ChildProcess, spawn } from "node:child_process";
 import { dirname } from "node:path";
 import { lstatSync, existsSync } from "node:fs";
 
@@ -161,6 +161,13 @@ export const isCommitInCurrentBranch = async (branch: string, sha: string): Prom
 
 	return !!result;
 };
+
+// TODO merge the 2 below methods
+export const getTopLevelLocalRepoDirectory = async (fileName: string): Promise<string> => runGit(
+		fileName,
+		"rev-parse",
+		"--show-toplevel"
+	);
 
 export const getGitFolder = async (fileName: string): Promise<string> =>
 	runGit(fileName, "rev-parse", "--git-dir");

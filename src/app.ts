@@ -4,7 +4,6 @@ import {
     TextDocument,
     TextEditor,
     Uri,
-    WorkspaceFolder,
     window,
     workspace, commands,
 } from "vscode";
@@ -33,6 +32,8 @@ import {InlineView} from "./views/inline-view";
 import store from "./util/store";
 import {NotificationView} from "./views/notification-view";
 import {configName, getProperty} from "./util/configuration";
+import fileInfo from "./util/file-info";
+import { Repo } from "./util/repo";
 
 export class App {
     private readonly disposable: Disposable;
@@ -106,14 +107,14 @@ export class App {
 
         this.logWatcher.onChange(async ({filePath}) => {
             this.existingReactions.clear();
-            const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(filePath));
-            const fileName = getFileName(workspaceFolder, filePath);
+            const repo = await fileInfo.getRepoFromFileUri(Uri.file(filePath));
+            const fileName = getFileName(repo, filePath);
             await blame.remove(filePath);
 
-            if (!workspaceFolder) {
+            if (!repo) {
                 return;
             }
-            const fileReactions = await this.ws.getFileReactions(workspaceFolder, fileName);
+            const fileReactions = await this.ws.getFileReactions(repo, fileName);
             if (fileReactions) {
                 const overwritenReactions = [];
                 for (const [key, value] of fileReactions.entries()) {
@@ -129,14 +130,14 @@ export class App {
                     }
                 }
                 if (overwritenReactions.length) {
-                    await this.detectOverwriteReaction(workspaceFolder, overwritenReactions);
+                    await this.detectOverwriteReaction(repo, overwritenReactions);
                 }
 
             }
         });
 
         return Disposable.from(
-            workspace.onDidChangeWorkspaceFolders(this.ws.init),
+            workspace.onDidChangeWorkspaceFolders(this.ws.init.bind(this.ws)),
             window.onDidChangeActiveTextEditor(async (textEditor): Promise<void> => {
                 if (validEditor(textEditor)) {
                     this.statusBarView.activity();
@@ -166,9 +167,7 @@ export class App {
             workspace.onDidCloseTextDocument((document: Document): void => {
                 blame.remove(document.fileName);
             }),
-            workspace.onDidOpenTextDocument(async (document: TextDocument): Promise<void> => {
-
-            }),
+            window.onDidChangeVisibleTextEditors(this.ws.initVisibleEditors.bind(this.ws)),
             workspace.onDidChangeTextDocument(async ({document, contentChanges, reason}) => {
                 const textEditor = getActiveTextEditor();
                 if (textEditor?.document === document) {
@@ -178,15 +177,15 @@ export class App {
         );
     }
 
-    private async onReactionShow(workspaceFolder: WorkspaceFolder, reactions: {
+    private async onReactionShow(repo: Repo, reactions: {
         fileName: string;
         reaction: StoreLineReaction
     }[]) {
-        this.detectSeenReaction(workspaceFolder, reactions)
+        this.detectSeenReaction(repo, reactions)
             .catch(() => {
                 // swallow error
             });
-        this.detectExistingReaction(workspaceFolder, reactions)
+        this.detectExistingReaction(repo, reactions)
             .catch(() => {
                 // swallow error
             });
@@ -200,12 +199,12 @@ export class App {
         if (!document) {
             return;
         }
-        const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-        if (!workspaceFolder) {
+        const repo = await fileInfo.getRepoFromFileUri(document.uri);
+        if (!repo) {
             return;
         }
-        await this.ws.requestDocumentReactionDetails(workspaceFolder, document);
-        const fileReactions = await this.ws.getFileReactions(workspaceFolder, document.fileName);
+        await this.ws.requestDocumentReactionDetails(repo, document);
+        const fileReactions = await this.ws.getFileReactions(repo, document.fileName);
         const commitMap: Map<string, boolean> = new Map();
         const branch = await getCurrentBranch(document.fileName);
         if (fileReactions) {
@@ -229,7 +228,7 @@ export class App {
                 }
             }
             if (overwrittenReactions.length) {
-                await this.detectOverwriteReaction(workspaceFolder, overwrittenReactions);
+                await this.detectOverwriteReaction(repo, overwrittenReactions);
             }
 
         }
@@ -266,7 +265,10 @@ export class App {
         let onlyLastLineSelected = false;
         let existingReactions: { fileName: string; reaction: StoreLineReaction }[] = [];
 
-        const workspaceFolder = workspace.getWorkspaceFolder(textEditor.document.uri);
+        const repo = await fileInfo.getRepoFromFileUri(textEditor.document.uri);
+
+        const isTracked = await blame.isTracked(textEditor.document.fileName);
+        commands.executeCommand('setContext', `${APP_HANDLE}.gitTracked`, isTracked);
 
         await Promise.all(textEditor.selections.map(async selection => {
             const start = selection.start.line;
@@ -290,7 +292,7 @@ export class App {
                     uncommitted = false;
                     try {
                         const newLinesReactions = await this.ws.getLineReactions(
-                            workspaceFolder,
+                            repo,
                             lineAware?.filename,
                             lineAware?.commit.hash,
                             lineAware?.line.source
@@ -330,7 +332,7 @@ export class App {
             if (this.ws.ERROR) {
                 this.statusBarView.setError();
             } else if (onlyLastLineSelected) {
-                this.statusBarView.set(false, undefined, textEditor, linesSelected);
+                await this.statusBarView.set(false, undefined, textEditor, linesSelected);
                 this.inlineView.set(false, undefined, textEditor, linesSelected);
             } else {
                 let details: Details[] = [];
@@ -339,7 +341,7 @@ export class App {
                         details.push(this.ws.detailsMap.get(id) as Details);
                     }
                 });
-                this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected);
+                await this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected);
                 this.inlineView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
             }
         } else {
@@ -348,19 +350,20 @@ export class App {
 
         if (this.annotateView.annotateIsOn) {
             const fullBlame = await blame.getBlameInfo(textEditor.document.fileName);
-            const lineReactions = await this.ws.getFileReactions(workspace.getWorkspaceFolder(Uri.file(textEditor.document.fileName)), textEditor.document.fileName);
+            const repo = await fileInfo.getRepoFromFilePath(textEditor.document.fileName);
+            const lineReactions = await this.ws.getFileReactions(repo, textEditor.document.fileName);
             await this.annotateView.createFileDecoration(fullBlame, lineReactions, textEditor, this.ws.detailsMap);
         } else {
             this.annotateView.removeAllDecorations();
         }
 
-        if (existingReactions.length && workspaceFolder) {
-            this.onReactionShow(workspaceFolder, existingReactions);
+        if (existingReactions.length && repo) {
+            this.onReactionShow(repo, existingReactions);
         }
 
-        if (workspaceFolder) {
+        if (repo) {
             const fullBlame = await blame.getBlameInfo(textEditor.document.fileName);
-            this.feedViewProvider?.setBlame(workspaceFolder, textEditor.document.fileName, fullBlame);
+            this.feedViewProvider?.setBlame(repo, textEditor.document.fileName, fullBlame);
         }
 
     }
@@ -371,7 +374,7 @@ export class App {
     }
 
     async detectReactionStatus(
-        workspaceFolder: WorkspaceFolder,
+        repo: Repo,
         existingReactions: {
             fileName: string; reaction: StoreLineReaction
         }[],
@@ -420,43 +423,43 @@ export class App {
                     cache.add(reaction.id);
                 });
             }
-            await this.ws.enqueue(workspaceFolder, {
+            await this.ws.enqueue(repo, {
                 action: 'reaction-status',
                 reactions: lineReactions
             });
         }
     }
 
-    async detectSeenReaction(workspaceFolder: WorkspaceFolder,
+    async detectSeenReaction(repo: Repo,
                              seenReactions: {
                                  fileName: string; reaction: StoreLineReaction
                              }[]
     ) {
 
-        return this.detectReactionStatus(workspaceFolder, seenReactions, 'seen', this.seenReactions);
+        return this.detectReactionStatus(repo, seenReactions, 'seen', this.seenReactions);
     }
 
     async detectExistingReaction(
-        workspaceFolder: WorkspaceFolder,
+        repo: Repo,
         existingReactions: {
             fileName: string; reaction: StoreLineReaction
         }[]
     ) {
 
-        return this.detectReactionStatus(workspaceFolder, existingReactions, 'existing', this.existingReactions);
+        return this.detectReactionStatus(repo, existingReactions, 'existing', this.existingReactions);
     }
 
     async detectOverwriteReaction(
-        workspaceFolder: WorkspaceFolder,
+        repo: Repo,
         removedReactions: {
             fileName: string; reaction: StoreLineReaction
         }[]
     ) {
 
-        return this.detectReactionStatus(workspaceFolder, removedReactions, 'overwrite');
+        return this.detectReactionStatus(repo, removedReactions, 'overwrite');
     }
 
-    registerReactionWithContent(emoji: ReactionEmojis) {
+    registerReactionWithContent(emoji: ReactionEmojis): (...args:any)=>Promise<void> {
         return async () => {
             const content = await window.showInputBox({
                 title: 'Add your comment for this reaction'
@@ -468,9 +471,9 @@ export class App {
 
             const textEditor = getActiveTextEditor();
             if (textEditor) {
-                const workspaceFolder = workspace.getWorkspaceFolder(textEditor?.document.uri);
-                if (workspaceFolder) {
-                    await this.registerReaction(textEditor.document, workspaceFolder, textEditor.selections, emoji, content === '' ? undefined : content);
+                const repo = await fileInfo.getRepoFromFileUri(textEditor?.document.uri);
+                if (repo) {
+                    await this.registerReaction(textEditor.document, repo, textEditor.selections, emoji, content === '' ? undefined : content);
                 }
             }
         };
@@ -478,7 +481,7 @@ export class App {
 
     async registerReaction(
         document: TextDocument,
-        workspaceFolder: WorkspaceFolder,
+        repo: Repo,
         selections: readonly Selection[],
         type: ReactionEmojis,
         content?: string
@@ -504,7 +507,7 @@ export class App {
                 );
                 const fileHead = await this.headWatcher.getFileHead(document.fileName);
                 const fileCommit = await this.logWatcher.getCommit(document.fileName);
-                const projectId = store.workspaceInfo.get(hash.getWorkspaceLocationHash(workspaceFolder.uri.fsPath))?.id;
+                const projectId = store.workspaceInfo.get(hash.getWorkspaceLocationHash(repo.root.fsPath))?.id;
                 if (lineAware && projectId) {
                     lineReactions.push({
                         project_id: projectId,
@@ -532,7 +535,7 @@ export class App {
             }));
         }));
         if (lineReactions.length > 0) {
-            await this.ws.enqueue(workspaceFolder, {
+            await this.ws.enqueue(repo, {
                 action: 'reaction',
                 reactions: lineReactions
             });

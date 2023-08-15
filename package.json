@@ -51,7 +51,7 @@
           "type": "webview",
           "id": "code-reactions.feed",
           "name": "Feed",
-          "when": "code-reactions.reactionsFeedEnabled"
+          "when": "code-reactions.gitTracked && code-reactions.reactionsFeedEnabled"
         }
       ]
     },
@@ -154,10 +154,10 @@
         {
           "command": "code-reactions.annotate",
           "group": "Code Reactions",
-          "when": "code-reactions.initialized"
+          "when": "code-reactions.gitTracked && code-reactions.initialized"
         },
         {
-          "when": "(editorTextFocus || editorHasSelection) && code-reactions.initialized",
+          "when": "code-reactions.gitTracked && (editorTextFocus || editorHasSelection) && code-reactions.initialized",
           "submenu": "code-reactions.addReactionWithContent",
           "group": "Code Reactions Content"
         }
@@ -192,7 +192,7 @@
         {
           "command": "code-reactions.annotate",
           "group": "navigation",
-          "when": "code-reactions.initialized"
+          "when": "code-reactions.gitTracked && code-reactions.initialized"
         }
       ]
     },

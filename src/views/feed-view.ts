@@ -7,7 +7,6 @@ import {
     WebviewViewProvider,
     WebviewViewResolveContext,
     workspace,
-    WorkspaceFolder,
 	env
 } from "vscode";
 import {
@@ -22,6 +21,8 @@ import {Blame} from "../git/file";
 import {evaluateMapEquality} from "../util/map-equality";
 
 import {APP_HANDLE} from "../util/constants";
+import { Repo } from "../util/repo";
+import fileInfo from "../util/file-info";
 
 interface Reaction {
     file_name: string;
@@ -33,9 +34,9 @@ interface Reaction {
 export class FeedViewProvider implements WebviewViewProvider {
 
     public static readonly viewType = `${APP_HANDLE}.feed`;
-    private reactions: Map<WorkspaceFolder, Reaction[]> = new Map();
-    private detailsMap: Map<WorkspaceFolder, Map<string, Details>> = new Map();
-    private reactionsTransformed: Map<WorkspaceFolder, {
+    private reactions: Map<Repo, Reaction[]> = new Map();
+    private detailsMap: Map<Repo, Map<string, Details>> = new Map();
+    private reactionsTransformed: Map<Repo, {
         [reaction_group_id: string]: {
             name?: string;
             file: string;
@@ -75,7 +76,7 @@ export class FeedViewProvider implements WebviewViewProvider {
             ]
         };
 
-        const folders = workspace.workspaceFolders;
+        const folders = fileInfo.getRepos();
 
         if (!folders || folders.length === 0) {
             webviewView.webview.html = '';
@@ -85,7 +86,7 @@ export class FeedViewProvider implements WebviewViewProvider {
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview, folders[0]);
     }
 
-    private async setReactionsTransformed(folder: WorkspaceFolder) {
+    private async setReactionsTransformed(repo: Repo) {
         const docMap = new Map<string, TextDocument>();
         const reactionsTransformed: {
             [reaction_group_id: string]: {
@@ -103,8 +104,8 @@ export class FeedViewProvider implements WebviewViewProvider {
             }
         } = {};
 
-        await Promise.all((this.reactions.get(folder) || []).map(async reaction => {
-            const fullPath = resolve(folder.uri.fsPath, reaction.file_name);
+        await Promise.all((this.reactions.get(repo) || []).map(async reaction => {
+            const fullPath = resolve(repo.root.fsPath, reaction.file_name);
             if (!docMap.has(reaction.file_name)) {
                 const document = await workspace.openTextDocument(fullPath);
                 docMap.set(reaction.file_name, document);
@@ -126,7 +127,7 @@ export class FeedViewProvider implements WebviewViewProvider {
             }
 
             reaction.ids.forEach(id => {
-                const detail = this.detailsMap.get(folder)?.get(id);
+                const detail = this.detailsMap.get(repo)?.get(id);
                 if (detail) {
                     if (!reactionsTransformed[detail.reaction_group_id]) {
                         reactionsTransformed[detail.reaction_group_id] = {
@@ -165,10 +166,10 @@ export class FeedViewProvider implements WebviewViewProvider {
 
             });
         }));
-        this.reactionsTransformed.set(folder, reactionsTransformed);
+        this.reactionsTransformed.set(repo, reactionsTransformed);
     }
 
-    public async setBlame(folder: WorkspaceFolder, fileName: string, blame: Blame | undefined) {
+    public async setBlame(repo: Repo, fileName: string, blame: Blame | undefined) {
 
         if (!blame || evaluateMapEquality(this.blameCache.get(fileName), blame)) {
             return;
@@ -176,31 +177,31 @@ export class FeedViewProvider implements WebviewViewProvider {
 
         this.blameCache.set(fileName, blame);
 
-        await this.setReactionsTransformed(folder);
+        await this.setReactionsTransformed(repo);
 
         if (this._view) {
-            this._view.webview.html = this._getHtmlForWebview(this._view.webview, folder);
+            this._view.webview.html = this._getHtmlForWebview(this._view.webview, repo);
         }
     }
 
-    public async setReactions(folder: WorkspaceFolder, projectReactions: ProjectReactionsInitialResponse['reactions']) {
+    public async setReactions(repo: Repo, projectReactions: ProjectReactionsInitialResponse['reactions']) {
 
-        this.reactions.set(folder, projectReactions.map(({ids, file_name, original_sha_line}) => ({
+        this.reactions.set(repo, projectReactions.map(({ids, file_name, original_sha_line}) => ({
             ids,
             file_name,
             original_sha: original_sha_line.split('_')[0],
             original_line: parseInt(original_sha_line.split('_')[1], 10)
         })));
-        await this.setReactionsTransformed(folder);
+        await this.setReactionsTransformed(repo);
 
         if (this._view) {
-            this._view.webview.html = this._getHtmlForWebview(this._view.webview, folder);
+            this._view.webview.html = this._getHtmlForWebview(this._view.webview, repo);
         }
     }
 
-    public async addReactions(folder: WorkspaceFolder, projectReactions: ProjectReactionsResponse['reactions']) {
-        if (this.reactions.has(folder)) {
-            const reactions = this.reactions.get(folder);
+    public async addReactions(repo: Repo, projectReactions: ProjectReactionsResponse['reactions']) {
+        if (this.reactions.has(repo)) {
+            const reactions = this.reactions.get(repo);
             reactions?.push(...projectReactions.map(({id, file_name, original_sha, original_line}) => ({
                 ids: [id],
                 file_name,
@@ -208,7 +209,7 @@ export class FeedViewProvider implements WebviewViewProvider {
                 original_line
             })));
         } else {
-            this.reactions.set(folder, projectReactions.map(({
+            this.reactions.set(repo, projectReactions.map(({
                                                                  id,
                                                                  file_name,
                                                                  original_sha,
@@ -220,32 +221,32 @@ export class FeedViewProvider implements WebviewViewProvider {
                 original_line
             })));
         }
-        await this.setReactionsTransformed(folder);
+        await this.setReactionsTransformed(repo);
 
         if (this._view) {
-            this._view.webview.html = this._getHtmlForWebview(this._view.webview, folder);
+            this._view.webview.html = this._getHtmlForWebview(this._view.webview, repo);
         }
     }
 
-    public async addDetails(folder: WorkspaceFolder, detailsMap: Map<string, Details>) {
-        if (this.detailsMap.has(folder)) {
+    public async addDetails(repo: Repo, detailsMap: Map<string, Details>) {
+        if (this.detailsMap.has(repo)) {
             for (const [key, value] of detailsMap.entries()) {
-                const existingMap = this.detailsMap.get(folder);
+                const existingMap = this.detailsMap.get(repo);
                 existingMap?.set(key, value);
             }
         } else {
-            this.detailsMap.set(folder, detailsMap);
+            this.detailsMap.set(repo, detailsMap);
         }
 
-        await this.setReactionsTransformed(folder);
+        await this.setReactionsTransformed(repo);
 
         if (this._view) {
-            this._view.webview.html = this._getHtmlForWebview(this._view.webview, folder);
+            this._view.webview.html = this._getHtmlForWebview(this._view.webview, repo);
         }
     }
 
-    private getHtmlContent(folder: WorkspaceFolder): string {
-        const reactionsTransformed = this.reactionsTransformed.get(folder);
+    private getHtmlContent(repo: Repo): string {
+        const reactionsTransformed = this.reactionsTransformed.get(repo);
         if (!reactionsTransformed) {
             return '<div class="load-container"><div class="lds-dual-ring"/></div>';
         }
@@ -298,13 +299,13 @@ export class FeedViewProvider implements WebviewViewProvider {
 						  </div>
 						  <div class="flex-row" role="cell">
 							  ${reaction.line ? `
-							  <a class="tooltip-button" href="vscode://file/${resolve(folder.uri.fsPath, reaction.file)}${reaction.line ? `:${reaction.line}` : ':1:1'}">
+							  <a class="tooltip-button" href="vscode://file/${resolve(repo.root.fsPath, reaction.file)}${reaction.line ? `:${reaction.line}` : ':1:1'}">
 								  ${reaction.file}@${reaction.line ? `${reaction.line}` : 'unknown'}
 								  </a>
 							  ` : `
 							  <div class="tooltip-container">
 									  <p class="tooltip-text comment-tooltip">${reaction.lineEmptyText || ''}</p>
-									  <a class="tooltip-button" href="vscode://file/${resolve(folder.uri.fsPath, reaction.file)}${reaction.line ? `:${reaction.line}` : ':1:1'}">
+									  <a class="tooltip-button" href="vscode://file/${resolve(repo.root.fsPath, reaction.file)}${reaction.line ? `:${reaction.line}` : ':1:1'}">
 								  ${reaction.file}@${reaction.line ? `${reaction.line}` : 'unknown'}
 								  </a>
 							  </div>
@@ -342,9 +343,7 @@ export class FeedViewProvider implements WebviewViewProvider {
         );
     }
 
-    private _getHtmlForWebview(webview: Webview, folder: WorkspaceFolder) {
-
-        const reactionsTransformed = this.reactionsTransformed.get(folder);
+    private _getHtmlForWebview(webview: Webview, repo: Repo) {
         // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
         const scriptUri = webview.asWebviewUri(Uri.joinPath(this._extensionUri, 'assets', 'js', 'main.js'));
 
@@ -380,7 +379,7 @@ export class FeedViewProvider implements WebviewViewProvider {
 			<div class="adadot">
 				for more details go to <a href="https://code-reactions.adadot.com">code-reactions.adadot.com</a></div>
 
-			${this.getHtmlContent(folder)}
+			${this.getHtmlContent(repo)}
 
 				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>

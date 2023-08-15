@@ -72,12 +72,12 @@ export class StatusBarView {
 		});
 	}
 
-	public set(
+	public async set(
 		uncommitted: boolean,
 		lineReactions: StoreLineReaction | undefined,
 		editor: PartialTextEditor | undefined,
 		linesSelected: number
-	): void {
+	): Promise<void> {
 		if(!getProperty("statusBarReactionsEnabled")){
 			return;
 		}
@@ -94,20 +94,20 @@ export class StatusBarView {
 			let prominentCounter = (this.statusBarMore.priority || 0)+this.currentProminentReactions.length;
 			let nonProminentCounter = defaultReactions.length - this.currentProminentReactions.length;
 
-			this.currentProminentReactions.forEach((reaction)=>{
+			await Promise.all(this.currentProminentReactions.map(async (reaction)=>{
 				const bar = this.statusBars.find(statusBar=> statusBar.emoji === reaction);
-					bar?.render(lineReactions, true, linesSelected, prominentCounter);
+					await bar?.render(lineReactions, true, linesSelected, prominentCounter);
 					prominentCounter -=1;
 
-			});
+			}));
 
-			this.statusBars.forEach((bar)=>{
+			await Promise.all(this.statusBars.map(async (bar)=>{
 				const prominentIndex = this.currentProminentReactions.findIndex(reaction=> reaction === bar.emoji);
 				if(prominentIndex === -1){
-					bar.render(lineReactions, this.showingMore, linesSelected, nonProminentCounter);
+					await bar.render(lineReactions, this.showingMore, linesSelected, nonProminentCounter);
 					nonProminentCounter -=1;
 				}
-			});
+			}));
 			if(getProperty("statusBarProminentReactionsAmount") < Object.values(ReactionEmojis).length){
 				this.renderMore(this.showingMore ? '➖' : '➕');
 			}else{

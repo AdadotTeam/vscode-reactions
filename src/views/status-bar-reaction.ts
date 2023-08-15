@@ -1,8 +1,9 @@
-import { Command, StatusBarAlignment, StatusBarItem, ThemeColor, window, workspace } from "vscode";
+import { Command, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
 import { ReactionEmojis, StoreLineReaction, yourEmoji } from "../types/app";
 import { getActiveTextEditor } from "../util/vs-code";
 
 import {APP_HANDLE} from "../util/constants";
+import fileInfo from "../util/file-info";
 
 export class StatusBarReaction {
     
@@ -40,20 +41,20 @@ export class StatusBarReaction {
 		return new ThemeColor(`statusBarItem.prominentForeground`);
 	}
 
-	private command(lineReactions: StoreLineReaction|undefined, linesSelected: number): Command | undefined{
+	private async command(lineReactions: StoreLineReaction|undefined, linesSelected: number): Promise<Command | undefined>{
 		if(lineReactions && lineReactions[this.yourEmoji] && lineReactions[this.yourEmoji] >= linesSelected){
 			return undefined;
 		}
 		const textEditor = getActiveTextEditor();
 		if(textEditor) {
-			const workspaceFolder = workspace.getWorkspaceFolder(textEditor?.document.uri);
-			if(workspaceFolder){
+			const repo = await fileInfo.getRepoFromFileUri(textEditor?.document.uri);
+			if(repo){
 				return {
                     // @ts-ignore
                     command: `${APP_HANDLE}.${Object.keys(ReactionEmojis).find(name => ReactionEmojis[name] === this.emoji)}`,
                     title: `Code Reactions: ${this.emoji}`,
                     // @ts-ignore
-					arguments: [textEditor.document, workspaceFolder, textEditor.selections, this.emoji]
+					arguments: [textEditor.document, repo, textEditor.selections, this.emoji]
 				};
 			}
 		}
@@ -70,14 +71,14 @@ export class StatusBarReaction {
 		return `${lineReactions[this.emoji]} ${this.emoji} by ${lineReactions[this.yourEmoji] > 0 ? 'you ' : ''}${lineReactions[this.yourEmoji] > 0 && lineReactions[this.emoji]-lineReactions[this.yourEmoji] > 0 ? 'and ':''}${lineReactions[this.emoji]-lineReactions[this.yourEmoji] > 0 ? `${lineReactions[this.emoji]-lineReactions[this.yourEmoji]} others` : ''}`;
 	}
 
-    public render(lineReactions: StoreLineReaction | undefined, show: boolean, linesSelected: number, priority?: number): void {
+    public async render(lineReactions: StoreLineReaction | undefined, show: boolean, linesSelected: number, priority?: number): Promise<void> {
 		if(typeof priority === 'number'){
 			this.changePriority(priority);
 		}
 		this.statusBarItem.text = this.text(lineReactions);
 		this.statusBarItem.color = this.color(lineReactions);
 		this.statusBarItem.tooltip = this.tooltip(lineReactions);
-		this.statusBarItem.command = this.command(lineReactions, linesSelected);
+		this.statusBarItem.command = await this.command(lineReactions, linesSelected);
 		this.statusBarItem.backgroundColor = new ThemeColor(`statusBarItem.remoteBackground`);
         if(show){
             this.show();
