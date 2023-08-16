@@ -1,18 +1,20 @@
 import { Command, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
-import { ReactionEmojis, StoreLineReaction, yourEmoji } from "../types/app";
+import { StoreLineReaction, ValueOf, yourEmoji } from "../types/app";
 import { getActiveTextEditor } from "../util/vs-code";
 
 import {APP_HANDLE} from "../util/constants";
 import fileInfo from "../util/file-info";
+import { ReactionEmojis } from "../types/reactions";
+import store from "../util/store";
 
 export class StatusBarReaction {
     
     private statusBarItem: StatusBarItem;
-    public emoji:ReactionEmojis;
+    public emoji: ValueOf<typeof ReactionEmojis>;
     private yourEmoji: yourEmoji;
 	public priority:number;
 
-    constructor(emoji: ReactionEmojis, priority: number){
+    constructor(emoji: ValueOf<typeof ReactionEmojis>, priority: number){
         this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, priority);
         this.emoji = emoji;
         this.yourEmoji = `your${emoji}` as yourEmoji;
@@ -51,7 +53,7 @@ export class StatusBarReaction {
 			if(repo){
 				return {
                     // @ts-ignore
-                    command: `${APP_HANDLE}.${Object.keys(ReactionEmojis).find(name => ReactionEmojis[name] === this.emoji)}`,
+                    command: `${APP_HANDLE}.${Object.keys(store.defaultReactions).find(name => store.defaultReactions[name] === this.emoji)}`,
                     title: `Code Reactions: ${this.emoji}`,
                     // @ts-ignore
 					arguments: [textEditor.document, repo, textEditor.selections, this.emoji]

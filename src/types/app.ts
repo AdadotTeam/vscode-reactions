@@ -1,3 +1,5 @@
+import { ReactionEmojis } from "./reactions";
+
 export type CommitAuthor = {
     name: string;
     mail: string;
@@ -38,6 +40,7 @@ export type PropertiesMap = {
 	newReactionNotificationsEnabled: boolean;
     newReactionNotificationsOnlyOnMyLines: boolean;
     reactionsFeedEnabled: boolean;
+    mainReactions: string;
 };
 
 export interface ProjectOpenEvent {
@@ -51,24 +54,13 @@ export interface ProjectOpenEvent {
     name: string;
 }
 
-export enum ReactionEmojis {
-    like = '👍',
-    dislike = '👎',
-    bug = '🐛',
-    poop = '💩',
-    rocket = '🚀',
-    thinking = '🤔',
-    heartEyes = '😍',
-    eyes = '👀'
-}
-
 export interface ReactionAddEvent {
     action: "reaction";
     reactions: {
         id: string;
         project_id: string;
         reaction_action: "add";
-        type: ReactionEmojis;
+        type:  ValueOf<typeof ReactionEmojis>;
         branch: string;
         content?: string;
         current_sha: string;

@@ -1,4 +1,4 @@
-import {ProjectInfo, ReactionEmojis, ValueOf} from "../types/app";
+import {ProjectInfo, ValueOf} from "../types/app";
 import hash from "../util/hash";
 import {resolve} from "path";
 import {Position, Range, Selection, window, workspace} from "vscode";
@@ -6,6 +6,7 @@ import {NewReactionEvent} from "../connection/ws";
 import blame from "../blame";
 import store from "../util/store";
 import {getProperty} from "../util/configuration";
+import { ReactionEmojis } from "../types/reactions";
 
 export class NotificationView {
 

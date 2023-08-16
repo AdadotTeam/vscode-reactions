@@ -1,19 +1,18 @@
 import {Command, ConfigurationChangeEvent, StatusBarAlignment, StatusBarItem, ThemeColor, window,} from "vscode";
-import {ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
+import {StoreLineReaction, ValueOf} from "../types/app";
 import {PartialTextEditor} from "../util/vs-code";
 import {StatusBarReaction} from "./status-bar-reaction";
 
 import {APP_HANDLE} from "../util/constants";
 import {getProminentReactions} from "../util/prominent-reactions";
 import {configName, getProperty} from "../util/configuration";
-
-const defaultReactions: (ValueOf<typeof ReactionEmojis>)[] = Object.values(ReactionEmojis);
+import store from "../util/store";
 
 export class StatusBarView {
 	private statusBars: StatusBarReaction[] = [];
 	private statusBarMore: StatusBarItem;
 	public showingMore: boolean = false;
-	private currentProminentReactions: (keyof StoreLineReaction)[] = defaultReactions.slice(0, getProperty("statusBarProminentReactionsAmount"));
+	private currentProminentReactions: (keyof StoreLineReaction)[] = store.reactionValues().slice(0, getProperty("statusBarProminentReactionsAmount"));
 	private timeout?: NodeJS.Timeout;
 
 	constructor() {
@@ -22,6 +21,15 @@ export class StatusBarView {
 			StatusBarAlignment.Right,
 			this.statusBars.length - getProperty("statusBarProminentReactionsAmount"),
 		);
+		store.onDefaultReactionsUpdate(()=>{
+			if(getProperty("statusBarReactionsEnabled")){
+				this.statusBars = this.createStatusBarItem();
+				this.statusBarMore = window.createStatusBarItem(
+					StatusBarAlignment.Right,
+					this.statusBars.length - getProperty("statusBarProminentReactionsAmount"),
+				);
+			}
+		});
 	}
 
 	public onDidChangeConfiguration(event: ConfigurationChangeEvent){
@@ -52,6 +60,8 @@ export class StatusBarView {
 		}
 
 		const bars: StatusBarReaction[] = [];
+
+		const defaultReactions = store.reactionValues();
 
 		defaultReactions.forEach((emoji, i)=>{
 			bars.push(
@@ -92,23 +102,23 @@ export class StatusBarView {
 			this.clear();
 		} else {
 			let prominentCounter = (this.statusBarMore.priority || 0)+this.currentProminentReactions.length;
-			let nonProminentCounter = defaultReactions.length - this.currentProminentReactions.length;
+			let nonProminentCounter = store.reactionValues().length - this.currentProminentReactions.length;
 
-			await Promise.all(this.currentProminentReactions.map(async (reaction)=>{
+			for(const reaction of this.currentProminentReactions){
 				const bar = this.statusBars.find(statusBar=> statusBar.emoji === reaction);
-					await bar?.render(lineReactions, true, linesSelected, prominentCounter);
-					prominentCounter -=1;
+				await bar?.render(lineReactions, true, linesSelected, prominentCounter);
+				prominentCounter -=1;
+			}
 
-			}));
-
-			await Promise.all(this.statusBars.map(async (bar)=>{
+			for(const bar of this.statusBars){
 				const prominentIndex = this.currentProminentReactions.findIndex(reaction=> reaction === bar.emoji);
 				if(prominentIndex === -1){
 					await bar.render(lineReactions, this.showingMore, linesSelected, nonProminentCounter);
 					nonProminentCounter -=1;
 				}
-			}));
-			if(getProperty("statusBarProminentReactionsAmount") < Object.values(ReactionEmojis).length){
+			}
+			
+			if(getProperty("statusBarProminentReactionsAmount") < store.reactionValues().length){
 				this.renderMore(this.showingMore ? '➖' : '➕');
 			}else{
 				this.renderMore('');

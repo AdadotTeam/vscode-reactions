@@ -13,7 +13,6 @@ import {
     Details,
     ProjectReactionsInitialResponse,
     ProjectReactionsResponse,
-    ReactionEmojis,
     ValueOf
 } from "../types/app";
 import {resolve} from "path";
@@ -23,6 +22,7 @@ import {evaluateMapEquality} from "../util/map-equality";
 import {APP_HANDLE} from "../util/constants";
 import { Repo } from "../util/repo";
 import fileInfo from "../util/file-info";
+import { ReactionEmojis } from "../types/reactions";
 
 interface Reaction {
     file_name: string;
@@ -43,7 +43,7 @@ export class FeedViewProvider implements WebviewViewProvider {
             branch?: string;
             content?: string;
             count: number;
-            type?: ValueOf<ReactionEmojis>;
+            type?: ValueOf<typeof ReactionEmojis>;
             ts?: string;
             seen?: boolean;
             fsPath?: string;
@@ -95,7 +95,7 @@ export class FeedViewProvider implements WebviewViewProvider {
                 branch?: string;
                 content?: string;
                 count: number;
-                type?: ValueOf<ReactionEmojis>;
+                type?: ValueOf<typeof ReactionEmojis>;
                 ts?: string;
                 seen?: boolean;
                 fsPath?: string;
@@ -189,9 +189,9 @@ export class FeedViewProvider implements WebviewViewProvider {
         this.reactions.set(repo, projectReactions.map(({ids, file_name, original_sha_line}) => ({
             ids,
             file_name,
-            original_sha: original_sha_line.split('_')[0],
-            original_line: parseInt(original_sha_line.split('_')[1], 10)
-        })));
+            original_sha: original_sha_line.toString().split('_')[0],
+            original_line: parseInt(original_sha_line.toString().split('_')[1], 10)
+        })) as unknown as Reaction[]);
         await this.setReactionsTransformed(repo);
 
         if (this._view) {

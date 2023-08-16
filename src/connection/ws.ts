@@ -13,7 +13,6 @@ import {
     ProjectOpenEvent,
     ProjectReactionsInitialResponse,
     ProjectReactionsResponse,
-    ReactionEmojis,
     StoreLineReaction,
     yourEmoji,
     ReactionStatusEvent,
@@ -31,6 +30,7 @@ import store from "../util/store";
 import {UserInfo} from "../types/git";
 import { Repo } from "../util/repo";
 import fileInfo from "../util/file-info";
+import { ReactionEmojis } from "../types/reactions";
 
 export type NewReactionEvent = ProjectReactionsResponse['reactions'];
 
@@ -181,14 +181,14 @@ export class WS {
                         }
                     });
                     const lineReaction: StoreLineReaction = {
-                        ids: new Set(reaction.ids),
-                        ...Object.values(ReactionEmojis).reduce((acc, v) => {
+                        ...store.reactionValues().reduce((acc, v) => {
                             acc[v] = reaction[v] || 0;
                             acc[`your${v}`] = reaction[`your${v}`] || 0;
                             return acc;
-                        }, {} as { [key in yourEmoji]: number } & { [key in ValueOf<typeof ReactionEmojis>]: number })
-                    };
-                    this.lineReactions.set(reaction.original_sha_line, lineReaction);
+                        }, {} as { [key in yourEmoji]: number } & { [key in ValueOf<typeof ReactionEmojis>]: number }),
+                        ids: new Set(reaction.ids),
+                    } as StoreLineReaction;
+                    this.lineReactions.set(reaction.original_sha_line.toString(), lineReaction);
                     projectIdFiles.push(`${reaction.project_id}-${reaction.file_name}`);
                 });
                 projectIdFiles.forEach(projectIdFile => {

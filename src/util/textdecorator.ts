@@ -1,6 +1,8 @@
 import {MarkdownString} from "vscode";
-import {Details, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
+import {Details, StoreLineReaction, ValueOf} from "../types/app";
 import {format} from "timeago.js";
+import { ReactionEmojis } from "../types/reactions";
+import store from "./store";
 
 type InfoTokenFunctionWithParameter = (value?: string) => string | number;
 type InfoTokenFunction = InfoTokenFunctionWithParameter | string | number;
@@ -18,7 +20,7 @@ export const normalizeLineReactions = (lineReactions: StoreLineReaction): {[key 
 		}
 		return {
 			...acc,
-			[key]: lineReactions[key as ReactionEmojis].toString()
+			[key]: lineReactions[key as keyof typeof ReactionEmojis]
 		};
 	}, {} as { [key in ValueOf<typeof ReactionEmojis>]: number });
 };
@@ -149,7 +151,7 @@ export const toInlineTextView = (lineReactions: StoreLineReaction, prominentReac
 
 export const toAnnotationTextView = (lineReactions: StoreLineReaction): string =>
 parseTokens(
-	Object.values(ReactionEmojis).map(emoji=>`${emoji} \${${emoji}}`).join(' '),
+	store.reactionValues().map(emoji=>`${emoji} \${${emoji}}`).join(' '),
 	// "👍 ${👍} 👎 ${👎}",
 	normalizeLineReactions(lineReactions),
 );
@@ -174,7 +176,7 @@ export const toHoverMarkdown = (details?: Details[]) => {
 		if(groups && Object.values(groups).length){
 			Object.values(groups).forEach(group => {
 				markdownString.appendMarkdown(`<br/>`);
-				markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${group.name} reacted with ${group.type} ${format(new Date(group.ts))}${group.content ? ` "${group.content}"` : ''}${group.count>1?`on ${group.count} lines`:''}</span>`);
+				markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${group.name} reacted with ${group.type} ${format(new Date(group.ts))}${group.content ? ` "${group.content}"` : ''}${group.count>1?` on ${group.count} lines`:''}</span>`);
 			});
 		}else{
 			markdownString.appendMarkdown(`<br/>`);

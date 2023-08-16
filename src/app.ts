@@ -13,11 +13,11 @@ import {StatusBarView} from "./views/status-bar-view";
 import {Document, getActiveTextEditor, getFilePosition, NO_FILE_OR_PLACE, validEditor} from "./util/vs-code";
 import {WS} from "./connection/ws";
 import {
-    ReactionEmojis,
     ReactionAddEvent,
     StoreLineReaction,
     ReactionStatusEvent,
-    Details
+    Details,
+    ValueOf
 } from "./types/app";
 import {isUncomitted} from "./util/git";
 import {HeadWatch} from "./watchers/head-watch";
@@ -34,6 +34,7 @@ import {NotificationView} from "./views/notification-view";
 import {configName, getProperty} from "./util/configuration";
 import fileInfo from "./util/file-info";
 import { Repo } from "./util/repo";
+import { ReactionEmojis } from "./types/reactions";
 
 export class App {
     private readonly disposable: Disposable;
@@ -63,9 +64,10 @@ export class App {
             if(event.affectsConfiguration(configName("reactionsFeedEnabled"))){
                 commands.executeCommand('setContext', `${APP_HANDLE}.reactionsFeedEnabled`, getProperty('reactionsFeedEnabled'));
             }
+            await store.onDidChangeConfiguration(event);
             await Promise.all([
                 this.statusBarView.onDidChangeConfiguration(event),
-                this.inlineView.onDidChangeConfiguration(event),
+                this.inlineView.onDidChangeConfiguration(event)
             ]);
             await this.updateView();
 		});
@@ -310,7 +312,7 @@ export class App {
                             lineAware?.commit.hash,
                             lineAware?.line.source
                         );
-                        Object.values(ReactionEmojis).forEach(key => {
+                        store.reactionValues().forEach(key => {
                             linesReactions[key] = (linesReactions[key] || 0) + (newLinesReactions[key] || 0);
                             linesReactions[`your${key}`] = (linesReactions[`your${key}`] || 0) + (newLinesReactions[`your${key}`] || 0);
                         });
@@ -482,7 +484,7 @@ export class App {
         return this.detectReactionStatus(repo, removedReactions, 'overwrite');
     }
 
-    registerReactionWithContent(emoji: ReactionEmojis): (...args:any)=>Promise<void> {
+    registerReactionWithContent(emoji: ValueOf<typeof ReactionEmojis>): (...args:any)=>Promise<void> {
         return async () => {
             const content = await window.showInputBox({
                 title: 'Add your comment for this reaction'
@@ -506,9 +508,9 @@ export class App {
         document: TextDocument,
         repo: Repo,
         selections: readonly Selection[],
-        type: ReactionEmojis,
+        type: ValueOf<typeof ReactionEmojis>,
         content?: string
-    ) {
+    ): Promise<void> {
         const lineReactions: Omit<ReactionAddEvent['reactions'][number], 'id'>[] = [];
         const reaction_group_id = randomUUID();
         await Promise.all(selections.map(async selection => {

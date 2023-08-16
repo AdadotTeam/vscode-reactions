@@ -1,5 +1,5 @@
 import {DecorationOptions, Range, TextEditor, TextEditorDecorationType, ThemeColor, window,} from "vscode";
-import {Details, ReactionEmojis, StoreLineReaction} from "../types/app";
+import {Details, StoreLineReaction} from "../types/app";
 import {getActiveTextEditor} from "../util/vs-code";
 import {toAnnotationTextView, toHoverMarkdown} from "../util/textdecorator";
 import {Blame} from "../git/file";
@@ -7,6 +7,7 @@ import {EMPTY_LINE_REACTION} from "../util/constants";
 import {App} from "../app";
 import {evaluateMapEquality} from "../util/map-equality";
 import fileInfo from "../util/file-info";
+import store from "../util/store";
 
 export class AnnotateView {
     private decorationTypes: Map<number, TextEditorDecorationType> = new Map();
@@ -85,7 +86,7 @@ export class AnnotateView {
 
         const text = toAnnotationTextView(reactions);
 
-        const any = Object.values(ReactionEmojis).find((emoji) => reactions[emoji] > 0);
+        const any = store.reactionValues().find((emoji) => reactions[emoji] > 0);
 
         let details: Details[] = [];
         Array.from(reactions.ids).forEach(id => {
