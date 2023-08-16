@@ -34,9 +34,9 @@ interface Reaction {
 export class FeedViewProvider implements WebviewViewProvider {
 
     public static readonly viewType = `${APP_HANDLE}.feed`;
-    private reactions: Map<Repo, Reaction[]> = new Map();
-    private detailsMap: Map<Repo, Map<string, Details>> = new Map();
-    private reactionsTransformed: Map<Repo, {
+    private reactions: Map<string, Reaction[]> = new Map();
+    private detailsMap: Map<string, Map<string, Details>> = new Map();
+    private reactionsTransformed: Map<string, {
         [reaction_group_id: string]: {
             name?: string;
             file: string;
@@ -52,6 +52,9 @@ export class FeedViewProvider implements WebviewViewProvider {
         }
     }> = new Map();
     private blameCache: Map<string, Blame> = new Map();
+    private seensCache: Set<string> = new Set();
+    private overwritesCache: Set<string> = new Set();
+    private currentRepo?: Repo;
 
     private _view?: WebviewView;
 
@@ -104,7 +107,7 @@ export class FeedViewProvider implements WebviewViewProvider {
             }
         } = {};
 
-        await Promise.all((this.reactions.get(repo) || []).map(async reaction => {
+        await Promise.all((this.reactions.get(repo.root.fsPath) || []).map(async reaction => {
             const fullPath = resolve(repo.root.fsPath, reaction.file_name);
             if (!docMap.has(reaction.file_name)) {
                 const document = await workspace.openTextDocument(fullPath);
@@ -127,7 +130,7 @@ export class FeedViewProvider implements WebviewViewProvider {
             }
 
             reaction.ids.forEach(id => {
-                const detail = this.detailsMap.get(repo)?.get(id);
+                const detail = this.detailsMap.get(repo.root.fsPath)?.get(id);
                 if (detail) {
                     if (!reactionsTransformed[detail.reaction_group_id]) {
                         reactionsTransformed[detail.reaction_group_id] = {
@@ -138,9 +141,9 @@ export class FeedViewProvider implements WebviewViewProvider {
                             type: detail.type,
                             count: 0,
                             ts: detail.ts,
-                            seen: detail.seen,
+                            seen: !this.overwritesCache.has(id) && (detail.seen || this.seensCache.has(id)),
                             fsPath: docMap.get(reaction.file_name)?.uri.fsPath,
-                            line: stillThere?.line.source,
+                            line: stillThere?.line.result,
                             lineEmptyText,
                         };
                     }
@@ -166,16 +169,46 @@ export class FeedViewProvider implements WebviewViewProvider {
 
             });
         }));
-        this.reactionsTransformed.set(repo, reactionsTransformed);
+        this.reactionsTransformed.set(repo.root.fsPath, reactionsTransformed);
     }
 
     public async setBlame(repo: Repo, fileName: string, blame: Blame | undefined) {
 
         if (!blame || evaluateMapEquality(this.blameCache.get(fileName), blame)) {
-            return;
+            if(this.currentRepo === repo){
+                return;
+            }
         }
 
-        this.blameCache.set(fileName, blame);
+        this.currentRepo = repo;
+
+        if(blame){
+            this.blameCache.set(fileName, blame);
+        }
+
+        await this.setReactionsTransformed(repo);
+
+        if (this._view) {
+            this._view.webview.html = this._getHtmlForWebview(this._view.webview, repo);
+        }
+    }
+
+    public async setStatuses(repo: Repo, seens: Set<string>, overwrites: Set<string>) {
+
+        const beforeSeenSize = this.seensCache.size;
+        const beforeOverSize = this.overwritesCache.size;
+        Array.from(seens).forEach(seen=>{
+            this.seensCache.add(seen);
+        });
+        Array.from(overwrites).forEach(overwrite=>{
+            this.overwritesCache.add(overwrite);
+        });
+        const afterSeenSize = this.seensCache.size;
+        const afterOverSize = this.overwritesCache.size;
+        
+        if(afterSeenSize === beforeSeenSize && afterOverSize === beforeOverSize) {
+            return;
+        }
 
         await this.setReactionsTransformed(repo);
 
@@ -186,7 +219,7 @@ export class FeedViewProvider implements WebviewViewProvider {
 
     public async setReactions(repo: Repo, projectReactions: ProjectReactionsInitialResponse['reactions']) {
 
-        this.reactions.set(repo, projectReactions.map(({ids, file_name, original_sha_line}) => ({
+        this.reactions.set(repo.root.fsPath, projectReactions.map(({ids, file_name, original_sha_line}) => ({
             ids,
             file_name,
             original_sha: original_sha_line.split('_')[0],
@@ -200,8 +233,8 @@ export class FeedViewProvider implements WebviewViewProvider {
     }
 
     public async addReactions(repo: Repo, projectReactions: ProjectReactionsResponse['reactions']) {
-        if (this.reactions.has(repo)) {
-            const reactions = this.reactions.get(repo);
+        if (this.reactions.has(repo.root.fsPath)) {
+            const reactions = this.reactions.get(repo.root.fsPath);
             reactions?.push(...projectReactions.map(({id, file_name, original_sha, original_line}) => ({
                 ids: [id],
                 file_name,
@@ -209,7 +242,7 @@ export class FeedViewProvider implements WebviewViewProvider {
                 original_line
             })));
         } else {
-            this.reactions.set(repo, projectReactions.map(({
+            this.reactions.set(repo.root.fsPath, projectReactions.map(({
                                                                  id,
                                                                  file_name,
                                                                  original_sha,
@@ -229,13 +262,13 @@ export class FeedViewProvider implements WebviewViewProvider {
     }
 
     public async addDetails(repo: Repo, detailsMap: Map<string, Details>) {
-        if (this.detailsMap.has(repo)) {
+        if (this.detailsMap.has(repo.root.fsPath)) {
             for (const [key, value] of detailsMap.entries()) {
-                const existingMap = this.detailsMap.get(repo);
+                const existingMap = this.detailsMap.get(repo.root.fsPath);
                 existingMap?.set(key, value);
             }
         } else {
-            this.detailsMap.set(repo, detailsMap);
+            this.detailsMap.set(repo.root.fsPath, detailsMap);
         }
 
         await this.setReactionsTransformed(repo);
@@ -246,7 +279,7 @@ export class FeedViewProvider implements WebviewViewProvider {
     }
 
     private getHtmlContent(repo: Repo): string {
-        const reactionsTransformed = this.reactionsTransformed.get(repo);
+        const reactionsTransformed = this.reactionsTransformed.get(repo.root.fsPath);
         if (!reactionsTransformed) {
             return '<div class="load-container"><div class="lds-dual-ring"/></div>';
         }
