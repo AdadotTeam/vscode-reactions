@@ -11,8 +11,6 @@ import {
 import {Details, StoreLineReaction} from "../types/app";
 import {getActiveTextEditor, PartialTextEditor} from "../util/vs-code";
 import {toHoverMarkdown, toInlineTextView} from "../util/textdecorator";
-
-import {APP_HANDLE} from "../util/constants";
 import {getProminentReactions} from "../util/prominent-reactions";
 import {configName, getProperty} from "../util/configuration";
 

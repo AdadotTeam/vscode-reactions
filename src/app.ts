@@ -301,7 +301,9 @@ export class App {
                             linesReactions[key] = (linesReactions[key] || 0) + (newLinesReactions[key] || 0);
                             linesReactions[`your${key}`] = (linesReactions[`your${key}`] || 0) + (newLinesReactions[`your${key}`] || 0);
                         });
-                        linesReactions.ids = newLinesReactions.ids;
+                        newLinesReactions.ids.forEach(id=>{
+                            linesReactions.ids.add(id);
+                        });
 
                         if (newLinesReactions && newLinesReactions.ids.size > 0) {
                             existingReactions.push({

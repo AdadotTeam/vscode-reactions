@@ -155,13 +155,26 @@ parseTokens(
 );
 
 export const toHoverMarkdown = (details?: Details[]) => {
+	const groups = details?.reduce((acc, detail)=>{
+		if(!acc[detail.reaction_group_id]){
+			acc[detail.reaction_group_id] = {
+				name: detail.name,
+				type: detail.type,
+				ts: detail.ts,
+				content: detail.content,
+				count: 0
+			};
+		}
+		acc[detail.reaction_group_id].count += 1;
+		return acc;
+	}, {} as {[group:string]:{name:string;type:ValueOf<typeof ReactionEmojis>;ts:string;content:string;count:number}});
 	const markdownString = new MarkdownString();
 		markdownString.supportHtml = true;
 		markdownString.appendMarkdown('<span style="color:#f4f40b;background-color:#666;">Reactions</span>');
-		if(details && details.length){
-			details.forEach(detail => {
+		if(groups && Object.values(groups).length){
+			Object.values(groups).forEach(group => {
 				markdownString.appendMarkdown(`<br/>`);
-				markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${detail.name} reacted with ${detail.type} ${format(new Date(detail.ts))}${detail.content ? ` "${detail.content}"` : ''}</span>`);
+				markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${group.name} reacted with ${group.type} ${format(new Date(group.ts))}${group.content ? ` "${group.content}"` : ''}${group.count>1?`on ${group.count} lines`:''}</span>`);
 			});
 		}else{
 			markdownString.appendMarkdown(`<br/>`);
