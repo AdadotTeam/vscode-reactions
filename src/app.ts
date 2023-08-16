@@ -47,6 +47,7 @@ export class App {
     private existingReactions: Set<string> = new Set();
     private seenReactions: Set<string> = new Set();
 	private readonly configChange: Disposable;
+    private invocationCounter = 0;
 
     constructor(extensionUri: Uri) {
         const feedViewProvider = new FeedViewProvider(extensionUri);
@@ -83,6 +84,10 @@ export class App {
         this.headWatcher.dispose();
         this.logWatcher.dispose();
 		this.configChange.dispose();
+    }
+
+    private invoked(){
+        this.invocationCounter = this.invocationCounter === Number.MAX_SAFE_INTEGER ? 0 : this.invocationCounter+1;
     }
 
     private setupListeners(): Disposable {
@@ -244,6 +249,13 @@ export class App {
             return;
         }
 
+        this.invoked();
+        const counter = this.invocationCounter;
+
+        try{
+
+        const before = getFilePosition(textEditor);
+
         const timeout = setTimeout(() => {
             if (!this.ws.ERROR) {
                 this.statusBarView.clear();
@@ -257,8 +269,6 @@ export class App {
             this.logWatcher.addFile(textEditor.document.fileName, head);
         }
 
-        const before = getFilePosition(textEditor);
-
         let linesReactions = EMPTY_LINE_REACTION();
         let uncommitted = true;
         let linesSelected = 0;
@@ -271,6 +281,9 @@ export class App {
         commands.executeCommand('setContext', `${APP_HANDLE}.gitTracked`, isTracked);
 
         await Promise.all(textEditor.selections.map(async selection => {
+            if(this.invocationCounter > counter){
+                throw new Error('counter');
+            }
             const start = selection.start.line;
             let end = selection.end.line;
 
@@ -327,6 +340,9 @@ export class App {
         const after = getFilePosition(textEditorAfter);
 
         clearTimeout(timeout);
+        if(this.invocationCounter > counter){
+            throw new Error('counter');
+        }
 
         // Only update if we haven't moved since we started blaming
         // or if we no longer have focus on any file
@@ -367,6 +383,11 @@ export class App {
             const fullBlame = await blame.getBlameInfo(textEditor.document.fileName);
             this.feedViewProvider?.setBlame(repo, textEditor.document.fileName, fullBlame);
         }
+    }catch(e:any){
+        if(e.message !== 'counter'){
+            throw e;
+        }
+    }
 
     }
 

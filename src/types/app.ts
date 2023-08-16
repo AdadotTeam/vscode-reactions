@@ -159,7 +159,7 @@ export interface Details {
     content: string;
     ts: string;
     name: string;
-    type: ValueOf<ReactionEmojis>;
+    type: ValueOf<typeof ReactionEmojis>;
     seen: boolean;
     reaction_group_id: string;
     branch: string;
