@@ -26,14 +26,34 @@ export async function activate({subscriptions, extensionUri}: ExtensionContext) 
 
     store.setReactions();
 
+    registerCommand(subscriptions)('react',async () => { 
+        const pick = await window.showQuickPick(
+            // @ts-ignore
+            Object.keys(ReactionEmojis).map((name)=>`:${name}: ${ReactionEmojis[name]}`), 
+            {title:'React!', canPickMany:false
+        });
+        console.log(pick);
+    });
+
+    registerCommand(subscriptions)('reactWithComment',async () => { 
+        const pick = await window.showQuickPick(
+            // @ts-ignore
+            Object.keys(ReactionEmojis).map((name)=>`:${name}: ${ReactionEmojis[name]}`), 
+            {title:'Pick Reaction', canPickMany:false
+        });
+        console.log(pick);
+        const content = await window.showInputBox({
+            title: 'Add your comment for this reaction'
+        });
+        console.log(pick);
+            console.log(content)
+    });
+
     registerCommand(subscriptions)('more',(showMore) => { showMore(); });
 
     registerCommand(subscriptions)('annotate', app.toggleAnnotations.bind(app));
 
     subscriptions.push(window.registerWebviewViewProvider(FeedViewProvider.viewType, app.feedViewProvider));
 
-    commands.executeCommand('setContext', `${APP_HANDLE}.reactionsFeedEnabled`, getProperty("reactionsFeedEnabled"));
-    // @ts-ignore
-    // const picks = await window.showQuickPick(Object.keys(ReactionEmojis).map((name)=>`:${name}: ${ReactionEmojis[name]}`), {title:'React!', canPickMany:true});
-    // console.log(picks)
+    commands.executeCommand('setContext', `${APP_HANDLE}.reactionsFeedEnabled`, getProperty("reactionsFeedEnabled"));   
 }
