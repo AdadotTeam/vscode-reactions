@@ -57,12 +57,12 @@
     },
     "commands": [
       {
-        "command": "code-reactions.like",
+        "command": "code-reactions.thumbsup",
         "title": ":thumbsup: 👍",
         "category": "Code Reactions"
       },
       {
-        "command": "code-reactions.dislike",
+        "command": "code-reactions.thumbsdown",
         "title": ":thumbsdown: 👎",
         "category": "Code Reactions"
       },
@@ -87,8 +87,8 @@
         "category": "Code Reactions"
       },
       {
-        "command": "code-reactions.heartEyes",
-        "title": ":heartEyes: 😍",
+        "command": "code-reactions.heart_eyes",
+        "title": ":heart_eyes: 😍",
         "category": "Code Reactions"
       },
       {
@@ -97,12 +97,12 @@
         "category": "Code Reactions"
       },
       {
-        "command": "code-reactions.likeWithContent",
+        "command": "code-reactions.thumbsupWithContent",
         "title": ":thumbsup: 👍 with comment",
         "category": "Code Reactions"
       },
       {
-        "command": "code-reactions.dislikeWithContent",
+        "command": "code-reactions.thumbsdownWithContent",
         "title": ":thumbsdown: 👎 with comment",
         "category": "Code Reactions"
       },
@@ -127,8 +127,8 @@
         "category": "Code Reactions"
       },
       {
-        "command": "code-reactions.heartEyesWithContent",
-        "title": ":heartEyes: 😍 with comment",
+        "command": "code-reactions.heart_eyesWithContent",
+        "title": ":heart_eyes: 😍 with comment",
         "category": "Code Reactions"
       },
       {
@@ -164,10 +164,10 @@
       ],
       "code-reactions.addReactionWithContent": [
         {
-          "command": "code-reactions.likeWithContent"
+          "command": "code-reactions.thumbsupWithContent"
         },
         {
-          "command": "code-reactions.dislikeWithContent"
+          "command": "code-reactions.thumbsdownWithContent"
         },
         {
           "command": "code-reactions.bugWithContent"
@@ -182,7 +182,7 @@
           "command": "code-reactions.thinkingWithContent"
         },
         {
-          "command": "code-reactions.heartEyesWithContent"
+          "command": "code-reactions.heart_eyesWithContent"
         },
         {
           "command": "code-reactions.eyesWithContent"
