@@ -47,6 +47,7 @@ export class App {
     private readonly annotateView: AnnotateView;
     private existingReactions: Set<string> = new Set();
     private seenReactions: Set<string> = new Set();
+    private overwrittenReactions: Set<string> = new Set();
 	private readonly configChange: Disposable;
     private invocationCounter = 0;
 
@@ -383,7 +384,8 @@ export class App {
 
         if (repo) {
             const fullBlame = await blame.getBlameInfo(textEditor.document.fileName);
-            this.feedViewProvider?.setBlame(repo, textEditor.document.fileName, fullBlame);
+            await this.feedViewProvider.setBlame(repo, textEditor.document.fileName, fullBlame);
+            await this.feedViewProvider.setStatuses(repo, this.seenReactions, this.overwrittenReactions);
         }
     }catch(e:any){
         if(e.message !== 'counter'){
@@ -481,7 +483,7 @@ export class App {
         }[]
     ) {
 
-        return this.detectReactionStatus(repo, removedReactions, 'overwrite');
+        return this.detectReactionStatus(repo, removedReactions, 'overwrite', this.overwrittenReactions);
     }
 
     registerReactionWithContent(emoji: ValueOf<typeof ReactionEmojis>): (...args:any)=>Promise<void> {
