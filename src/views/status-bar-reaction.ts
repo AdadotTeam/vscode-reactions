@@ -1,11 +1,11 @@
-import { Command, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
-import { StoreLineReaction, ValueOf, yourEmoji } from "../types/app";
+import { Command, MarkdownString, StatusBarAlignment, StatusBarItem, ThemeColor, window } from "vscode";
+import { StoreLineReaction, ValueOf, Details, yourEmoji } from "../types/app";
 import { getActiveTextEditor } from "../util/vs-code";
-
 import {APP_HANDLE} from "../util/constants";
 import fileInfo from "../util/file-info";
 import { ReactionEmojis } from "../types/reactions";
 import store from "../util/store";
+import {toTooltipMarkdown} from "../util/textdecorator";
 
 export class StatusBarReaction {
     
@@ -63,23 +63,26 @@ export class StatusBarReaction {
 		return undefined;
 	}
 
-    private tooltip(lineReactions: StoreLineReaction|undefined):string {
+    private async tooltip(lineReactions: StoreLineReaction|undefined, details?: Details[]):Promise<MarkdownString | string> {
 		if(!lineReactions){
 			return '';
 		}
 		if(!lineReactions[this.emoji]){
 			return `No ${this.emoji} yet`;
 		}
-		return `${lineReactions[this.emoji]} ${this.emoji} by ${lineReactions[this.yourEmoji] > 0 ? 'you ' : ''}${lineReactions[this.yourEmoji] > 0 && lineReactions[this.emoji]-lineReactions[this.yourEmoji] > 0 ? 'and ':''}${lineReactions[this.emoji]-lineReactions[this.yourEmoji] > 0 ? `${lineReactions[this.emoji]-lineReactions[this.yourEmoji]} others` : ''}`;
+		if(!details || details.length===0){
+			return `${lineReactions[this.emoji]} ${this.emoji} by ${lineReactions[this.yourEmoji] > 0 ? 'you ' : ''}${lineReactions[this.yourEmoji] > 0 && lineReactions[this.emoji]-lineReactions[this.yourEmoji] > 0 ? 'and ':''}${lineReactions[this.emoji]-lineReactions[this.yourEmoji] > 0 ? `${lineReactions[this.emoji]-lineReactions[this.yourEmoji]} others` : ''}`;
+		}
+		return await toTooltipMarkdown(this.emoji, details);
 	}
 
-    public async render(lineReactions: StoreLineReaction | undefined, show: boolean, linesSelected: number, priority?: number): Promise<void> {
+    public async render(lineReactions: StoreLineReaction | undefined, show: boolean, linesSelected: number, details?: Details[], priority?: number): Promise<void> {
 		if(typeof priority === 'number'){
 			this.changePriority(priority);
 		}
 		this.statusBarItem.text = this.text(lineReactions);
 		this.statusBarItem.color = this.color(lineReactions);
-		this.statusBarItem.tooltip = this.tooltip(lineReactions);
+		this.statusBarItem.tooltip = await this.tooltip(lineReactions, details);
 		this.statusBarItem.command = await this.command(lineReactions, linesSelected);
 		this.statusBarItem.backgroundColor = new ThemeColor(`statusBarItem.remoteBackground`);
         if(show){

@@ -54,16 +54,16 @@ Get `instantly notified` for any reactions to either `the repo`, or specifically
 In the future we would like to support any native emoji. Until we figure out
 how to do that in a nice UI way this is the list of supported emojis:
 
-| Emoji | Designation   | 
-|-------|---------------|
-|    👍   | : like :      |
-|    👎   | : dislike :   |
-|    🐛   | : bug :       |
-|    💩   | : poop :      |
-|    🚀   | : rocket :    |
-|    🤔   | : thinking :  |
-|    😍   | : heartEyes : |
-|    👀   | : eyes :      |
+| Emoji | Designation    | 
+|-------|----------------|
+|    👍   | : thumbsup :   |
+|    👎   | : thumbsdown : |
+|    🐛   | : bug :        |
+|    💩   | : poop :       |
+|    🚀   | : rocket :     |
+|    🤔   | : thinking :   |
+|    😍   | : heart_eyes : |
+|    👀   | : eyes :       |
 
 
 \!\[feature X\]\(images/feature-x.png\)
@@ -90,9 +90,15 @@ This extension contributes the following settings:
 |code-reactions.newReactionNotificationsOnlyOnMyLines|boolean|false|Get notifications for reactions that happened only on lines you have authored|
 |code-reactions.reactionsFeedEnabled|boolean|true|Whether the reactions feed panel exists|
 
+## FAQs
+### Do reactions follow the code through changes?
+Reactions follow the line as long as the line exists and it's not modified. Note that whitespace changes,
+or moves of the line due to other lines being added or removed **do not** constitute a change. However, modifying
+in any way the text of the line, removes all reactions from that line.
 
 ## Support and Community
-Join the our community on Discord to connect with other users, share your experiences, and chat about coding.
+Join our [community on Discord](https://discord.gg/HZhuynMRsN) to connect with other users, share your experiences, 
+and chat about coding, or anything really.
 
 ## Issue Reporting and Feature Requests
 Found a bug? Have a feature request? Reach out on our [GitHub Issues page](https://github.com/AdadotTeam/vscode-reactions/issues).
@@ -104,7 +110,7 @@ Your contributions, feedback, and engagement would be invaluable,
 and we would love for you to play a significant role in shaping the future of Code Reactions. Thank you for your support!
 
 ## Code Contributions
-Want to contribute? Follow the [CONTRIBUTING]() docs to get started.
+Want to contribute code? Follow the [CONTRIBUTING](https://github.com/AdadotTeam/vscode-reactions/blob/main/CONTRIBUTING.md) docs to get started.
 
 ## Documentation Contributions
 Contributions to the documentation are greatly appreciated. 

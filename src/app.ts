@@ -353,8 +353,10 @@ export class App {
             if (this.ws.ERROR) {
                 this.statusBarView.setError();
             } else if (onlyLastLineSelected) {
-                await this.statusBarView.set(false, undefined, textEditor, linesSelected);
-                this.inlineView.set(false, undefined, textEditor, linesSelected);
+                await Promise.all([
+                    this.statusBarView.set(false, undefined, textEditor, linesSelected),
+                    this.inlineView.set(false, undefined, textEditor, linesSelected)
+                ]);
             } else {
                 let details: Details[] = [];
                 Array.from(linesReactions.ids).forEach(id => {
@@ -362,8 +364,10 @@ export class App {
                         details.push(this.ws.detailsMap.get(id) as Details);
                     }
                 });
-                await this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected);
-                this.inlineView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
+                await Promise.all([
+                    this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected, details),
+                    this.inlineView.set(uncommitted, linesReactions, textEditor, linesSelected, details)
+                ]);
             }
         } else {
             return this.updateView();
@@ -388,7 +392,7 @@ export class App {
             await this.feedViewProvider.setStatuses(repo, this.seenReactions, this.overwrittenReactions);
         }
     }catch(e:any){
-        if(e.message !== 'counter'){
+        if(e.message !== 'counter') {
             throw e;
         }
     }

@@ -127,6 +127,8 @@ export class WS {
         url.searchParams.append('email_hash', emailHash);
         if(userInfo.name){
             url.searchParams.append('name', userInfo.name);
+        }else{
+            console.log("NO NAME");
         }
 
         const ws = new WebSocket(url.toString());
@@ -350,10 +352,10 @@ export class WS {
         const folderPath = repo.root.fsPath;
                 const emailHash = hash.getEmailHash(userInfo.email as string);
                 if(this.activeSockets.has(emailHash) && this.activeRepoEmailMapping.has(folderPath)){
-                    console.log('already connected')
+                    console.log('already connected');
                     return;
                 }
-                console.log('call open')
+                console.log('call open');
                 this.open(repo, userInfo);
                 this.activeRepoEmailMapping.set(folderPath, emailHash);
                 const remoteUrl = await getRemoteUrl();

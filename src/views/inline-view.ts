@@ -30,7 +30,7 @@ export class InlineView {
 		}
 	}
 
-	private createLineDecoration(text: string, editor?: PartialTextEditor, details?: Details[]): void {
+	private async createLineDecoration(text: string, editor?: PartialTextEditor, details?: Details[]): Promise<void> {
 		if(!editor || !getProperty("inlineMessageEnabled")){
 			return;
 		}
@@ -42,10 +42,11 @@ export class InlineView {
 		);
 
 		this.removeLineDecoration();
+		const hoverMessage = await toHoverMarkdown(details);
 		
 		editor.setDecorations?.(this.decorationType, [
 			{
-				hoverMessage: toHoverMarkdown(details),
+				hoverMessage,
 				renderOptions: {
 					after: {
 						contentText: text,
@@ -64,23 +65,23 @@ export class InlineView {
 		editor?.setDecorations?.(this.decorationType, []);
 	}
 
-	public set(
+	public async set(
 		uncommitted: boolean,
 		lineReactions: StoreLineReaction | undefined,
 		editor: PartialTextEditor | undefined,
 		linesSelected: number,
 		details?: Details[]
-	): void {
+	): Promise<void> {
 		if(!getProperty("inlineMessageEnabled")){
 			return;
 		}
 		if(!lineReactions){
 			this.clear();
 		}else if(uncommitted){
-				this.createLineDecoration(getProperty("inlineMessageNoCommit"), editor);
+				await this.createLineDecoration(getProperty("inlineMessageNoCommit"), editor);
 		}else{
 			const prominentReactions = getProminentReactions(lineReactions, getProperty("inlineProminentReactionsAmount"));
-			this.createLineDecoration(toInlineTextView(lineReactions, prominentReactions), editor, details);
+			await this.createLineDecoration(toInlineTextView(lineReactions, prominentReactions), editor, details);
 		}
 	}
 
