@@ -80,7 +80,7 @@ export class AnnotateView {
 
     }
 
-    private async createLineDecoration(reactions: StoreLineReaction, editor: TextEditor, line: number): void {
+    private async createLineDecoration(reactions: StoreLineReaction, editor: TextEditor, line: number): Promise<void> {
         const decorationType = this.decorationTypes.get(line) || window.createTextEditorDecorationType({});
 
         const text = toAnnotationTextView(reactions);

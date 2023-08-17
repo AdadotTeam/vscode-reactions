@@ -30,7 +30,7 @@ export class InlineView {
 		}
 	}
 
-	private async createLineDecoration(text: string, editor?: PartialTextEditor, details?: Details[]): void {
+	private async createLineDecoration(text: string, editor?: PartialTextEditor, details?: Details[]): Promise<void> {
 		if(!editor || !getProperty("inlineMessageEnabled")){
 			return;
 		}

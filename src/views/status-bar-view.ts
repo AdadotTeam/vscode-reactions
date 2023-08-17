@@ -1,5 +1,5 @@
 import {Command, ConfigurationChangeEvent, StatusBarAlignment, StatusBarItem, ThemeColor, window,} from "vscode";
-import {ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
+import {Details, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
 import {PartialTextEditor} from "../util/vs-code";
 import {StatusBarReaction} from "./status-bar-reaction";
 
@@ -76,7 +76,8 @@ export class StatusBarView {
 		uncommitted: boolean,
 		lineReactions: StoreLineReaction | undefined,
 		editor: PartialTextEditor | undefined,
-		linesSelected: number
+		linesSelected: number,
+		details?: Details[]
 	): Promise<void> {
 		if(!getProperty("statusBarReactionsEnabled")){
 			return;
@@ -96,7 +97,7 @@ export class StatusBarView {
 
 			await Promise.all(this.currentProminentReactions.map(async (reaction)=>{
 				const bar = this.statusBars.find(statusBar=> statusBar.emoji === reaction);
-					await bar?.render(lineReactions, true, linesSelected, prominentCounter);
+					await bar?.render(lineReactions, true, linesSelected, details, prominentCounter);
 					prominentCounter -=1;
 
 			}));
@@ -104,7 +105,7 @@ export class StatusBarView {
 			await Promise.all(this.statusBars.map(async (bar)=>{
 				const prominentIndex = this.currentProminentReactions.findIndex(reaction=> reaction === bar.emoji);
 				if(prominentIndex === -1){
-					await bar.render(lineReactions, this.showingMore, linesSelected, nonProminentCounter);
+					await bar.render(lineReactions, this.showingMore, linesSelected, details, nonProminentCounter);
 					nonProminentCounter -=1;
 				}
 			}));
