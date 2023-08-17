@@ -25,6 +25,8 @@ export async function activate({subscriptions, extensionUri}: ExtensionContext) 
 
     registerCommand(subscriptions)('more',(showMore) => { showMore(); });
 
+    registerCommand(subscriptions)('test',() => { console.log('test') });
+
     registerCommand(subscriptions)('annotate', app.toggleAnnotations.bind(app));
 
     subscriptions.push(window.registerWebviewViewProvider(FeedViewProvider.viewType, app.feedViewProvider));

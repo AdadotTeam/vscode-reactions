@@ -352,7 +352,7 @@ export class App {
                 this.statusBarView.setError();
             } else if (onlyLastLineSelected) {
                 await this.statusBarView.set(false, undefined, textEditor, linesSelected);
-                this.inlineView.set(false, undefined, textEditor, linesSelected);
+                await this.inlineView.set(false, undefined, textEditor, linesSelected);
             } else {
                 let details: Details[] = [];
                 Array.from(linesReactions.ids).forEach(id => {
@@ -361,7 +361,7 @@ export class App {
                     }
                 });
                 await this.statusBarView.set(uncommitted, linesReactions, textEditor, linesSelected);
-                this.inlineView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
+                await this.inlineView.set(uncommitted, linesReactions, textEditor, linesSelected, details);
             }
         } else {
             return this.updateView();

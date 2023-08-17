@@ -1,6 +1,9 @@
-import {MarkdownString} from "vscode";
+import {Command, MarkdownString, commands} from "vscode";
 import {Details, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
 import {format} from "timeago.js";
+import fileInfo from "./file-info";
+import { getActiveTextEditor } from "./vs-code";
+import { APP_HANDLE } from "./constants";
 
 type InfoTokenFunctionWithParameter = (value?: string) => string | number;
 type InfoTokenFunction = InfoTokenFunctionWithParameter | string | number;
@@ -154,31 +157,64 @@ parseTokens(
 	normalizeLineReactions(lineReactions),
 );
 
-export const toHoverMarkdown = (details?: Details[]) => {
-	const groups = details?.reduce((acc, detail)=>{
-		if(!acc[detail.reaction_group_id]){
-			acc[detail.reaction_group_id] = {
+const command = async (emoji: ValueOf<typeof ReactionEmojis>): Promise<Command | undefined> =>{
+	
+	const textEditor = getActiveTextEditor();
+	if(textEditor) {
+		const repo = await fileInfo.getRepoFromFileUri(textEditor?.document.uri);
+		if(repo){
+			return {
+				// @ts-ignore
+				command: `${APP_HANDLE}.${Object.keys(ReactionEmojis).find(name => ReactionEmojis[name] === emoji)}`,
+				title: `Code Reactions: ${emoji}`,
+				// @ts-ignore
+				arguments: [textEditor.document, repo, textEditor.selections, emoji]
+			};
+		}
+	}
+	return undefined;
+}
+
+export const toHoverMarkdown = async (details?: Details[]) => {
+	const sorted = details?.sort((a,b)=>new Date(b.ts).valueOf()-new Date(a.ts).valueOf());
+	const byType = new Map<string, number>();
+	const groups = sorted?.reduce((acc, detail)=>{
+		byType.set(detail.type, (byType.get(detail.type)||0)+1);
+		if(!acc.has(detail.reaction_group_id)){
+			acc.set(detail.reaction_group_id,{
 				name: detail.name,
 				type: detail.type,
 				ts: detail.ts,
 				content: detail.content,
 				count: 0
-			};
+			});
 		}
-		acc[detail.reaction_group_id].count += 1;
+		// @ts-ignore
+		acc.get(detail.reaction_group_id).count += 1;
 		return acc;
-	}, {} as {[group:string]:{name:string;type:ValueOf<typeof ReactionEmojis>;ts:string;content:string;count:number}});
+	}, new Map() as Map<string,{name:string;type:ValueOf<typeof ReactionEmojis>;ts:string;content:string;count:number}>);
+	const byTypeArray = Array.from(byType?.entries() || []).sort((a,b)=>b[1]-a[1]);
 	const markdownString = new MarkdownString();
 		markdownString.supportHtml = true;
 		markdownString.appendMarkdown('<span style="color:#f4f40b;background-color:#666;">Reactions</span>');
-		if(groups && Object.values(groups).length){
-			Object.values(groups).forEach(group => {
+		if(byTypeArray.length > 0){
+			const typeTexts = await Promise.all(byTypeArray.map(async ([type, ammount])=>{
+				const commandArgs = await command(type as ValueOf<typeof ReactionEmojis>);
+				return `[${type}](command:${commandArgs?.command}?${encodeURI(JSON.stringify(commandArgs?.arguments))}) ${ammount}`;
+			}));
+			markdownString.appendMarkdown(`<br/>`);
+			markdownString.appendMarkdown(`<span>${typeTexts.join(" ")}</span>`);
+		}
+		const values = Array.from(groups?.values() || []);
+		if(values && values.length){
+			values.forEach(group => {
 				markdownString.appendMarkdown(`<br/>`);
-				markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${group.name} reacted with ${group.type} ${format(new Date(group.ts))}${group.content ? ` "${group.content}"` : ''}${group.count>1?`on ${group.count} lines`:''}</span>`);
+				markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${group.name} reacted with ${group.type} ${format(new Date(group.ts))}${group.content ? ` commenting: "${group.content}"` : ''}${group.count>1?` on ${group.count} lines`:''}</span>`);
 			});
 		}else{
 			markdownString.appendMarkdown(`<br/>`);
 				markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">No reactions for this line</span>`);
 		}
+		markdownString.isTrusted = true;
 		return markdownString;
 };

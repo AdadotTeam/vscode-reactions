@@ -66,7 +66,7 @@ export class AnnotateView {
                 reaction = fileReactions.get(`${value?.commit.hash}_${value?.line.source}`) || EMPTY_LINE_REACTION();
             }
 
-            this.createLineDecoration(reaction, editor, key - 1);
+            await this.createLineDecoration(reaction, editor, key - 1);
 
             shownReactions.push({
                 fileName: editor.document.fileName,
@@ -80,7 +80,7 @@ export class AnnotateView {
 
     }
 
-    private createLineDecoration(reactions: StoreLineReaction, editor: TextEditor, line: number): void {
+    private async createLineDecoration(reactions: StoreLineReaction, editor: TextEditor, line: number): void {
         const decorationType = this.decorationTypes.get(line) || window.createTextEditorDecorationType({});
 
         const text = toAnnotationTextView(reactions);
@@ -94,8 +94,10 @@ export class AnnotateView {
             }
         });
 
+        const hoverMessage = await toHoverMarkdown(details);
+
         const renderOptions: DecorationOptions = {
-            hoverMessage: toHoverMarkdown(details),
+            hoverMessage,
             renderOptions: {
                 before: {
                     contentText: text,
