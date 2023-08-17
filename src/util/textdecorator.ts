@@ -4,7 +4,7 @@ import {format} from "timeago.js";
 import fileInfo from "./file-info";
 import {getActiveTextEditor} from "./vs-code";
 import {APP_HANDLE} from "./constants";
-import { ReactionEmojis } from "../types/reactions";
+import {ReactionEmojis, ReactionEmojisInverse} from "../types/reactions";
 import store from "./store";
 
 type InfoTokenFunctionWithParameter = (value?: string) => string | number;
@@ -167,7 +167,7 @@ const command = async (emoji: ValueOf<typeof ReactionEmojis>): Promise<Command |
         if (repo) {
             return {
                 // @ts-ignore
-                command: `${APP_HANDLE}.${Object.keys(ReactionEmojis).find(name => ReactionEmojis[name] === emoji)}`,
+                command: `${APP_HANDLE}.${ReactionEmojisInverse[emoji]}`,
                 title: `Code Reactions: ${emoji}`,
                 // @ts-ignore
                 arguments: [textEditor.document, repo, textEditor.selections, emoji]

@@ -3,7 +3,7 @@ import { StoreLineReaction, ValueOf, Details, yourEmoji } from "../types/app";
 import { getActiveTextEditor } from "../util/vs-code";
 import {APP_HANDLE} from "../util/constants";
 import fileInfo from "../util/file-info";
-import { ReactionEmojis } from "../types/reactions";
+import {ReactionEmojis, ReactionEmojisInverse} from "../types/reactions";
 import store from "../util/store";
 import {toTooltipMarkdown} from "../util/textdecorator";
 
@@ -51,9 +51,10 @@ export class StatusBarReaction {
 		if(textEditor) {
 			const repo = await fileInfo.getRepoFromFileUri(textEditor?.document.uri);
 			if(repo){
+
 				return {
                     // @ts-ignore
-                    command: `${APP_HANDLE}.${Object.keys(store.defaultReactions).find(name => store.defaultReactions[name] === this.emoji)}`,
+                    command: `${APP_HANDLE}.${ReactionEmojisInverse[this.emoji]}`,
                     title: `Code Reactions: ${this.emoji}`,
                     // @ts-ignore
 					arguments: [textEditor.document, repo, textEditor.selections, this.emoji]
