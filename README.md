@@ -54,16 +54,16 @@ Get `instantly notified` for any reactions to either `the repo`, or specifically
 In the future we would like to support any native emoji. Until we figure out
 how to do that in a nice UI way this is the list of supported emojis:
 
-| Emoji | Designation   | 
-|-------|---------------|
-|    👍   | : like :      |
-|    👎   | : dislike :   |
-|    🐛   | : bug :       |
-|    💩   | : poop :      |
-|    🚀   | : rocket :    |
-|    🤔   | : thinking :  |
-|    😍   | : heartEyes : |
-|    👀   | : eyes :      |
+| Emoji | Designation    | 
+|-------|----------------|
+|    👍   | : thumbsup :   |
+|    👎   | : thumbsdown : |
+|    🐛   | : bug :        |
+|    💩   | : poop :       |
+|    🚀   | : rocket :     |
+|    🤔   | : thinking :   |
+|    😍   | : heart_eyes : |
+|    👀   | : eyes :       |
 
 
 \!\[feature X\]\(images/feature-x.png\)
