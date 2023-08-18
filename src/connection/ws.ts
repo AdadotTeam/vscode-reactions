@@ -36,6 +36,12 @@ export type NewReactionEvent = ProjectReactionsResponse['reactions'];
 
 type NewReactionEventCallbackFunction = (event: NewReactionEvent) => void;
 
+enum ConnectionStatuses {
+    WS_INIT = 'WS_INIT',
+    OPEN = 'OPEN',
+    ERROR = 'ERROR',
+}
+
 export class WS {
     private activeRepoEmailMapping = new Map<string, string>();
     private activeSockets = new Map<string, WebSocket>();
@@ -44,9 +50,7 @@ export class WS {
     private lineReactionsTemp = new Map<string, StoreLineReaction>();
     private reactionsTemp = new Map<string, typeof this.lineReactionsTemp>();
     public detailsMap = new Map<string, Details>();
-    private WS_INIT = false;
-    public OPEN = false;
-    public ERROR = false;
+    private connectionStatus: Map<Repo['root']['fsPath'], ConnectionStatuses> = new Map();
     private USE_TEMP = false;
     private readonly updateAppViewCallback: any;
     private feedViewProvider: FeedViewProvider;
@@ -58,6 +62,13 @@ export class WS {
         this.feedViewProvider = feedViewProvider;
         this.init();
         this.updateAppViewCallback = updateAppViewCallback;
+    }
+
+    inError(repo?:Repo){
+        if(!repo){
+            return false;
+        }
+        return this.connectionStatus.get(repo.root.fsPath) === ConnectionStatuses.ERROR;
     }
 
     async getLineReactions(repo?: Repo, fileName?: string, originalSha?: string, originalLine?: number): Promise<StoreLineReaction> {
@@ -122,8 +133,7 @@ export class WS {
 
     open(repo: Repo, userInfo: UserInfo, retries: number = 0) {
         const emailHash = hash.getEmailHash(userInfo.email as string);
-        const url = new URL('ws://localhost:3003?email_hash=${emailHash}');
-        // const url = new URL('wss://t65omwlbx9.execute-api.eu-west-1.amazonaws.com/sit');
+        const url = new URL(process.env.WS_URL as string || 'wss://code-reactions-ws.adadot.com');
         url.searchParams.append('email_hash', emailHash);
         if(userInfo.name){
             url.searchParams.append('name', userInfo.name);
@@ -136,14 +146,14 @@ export class WS {
 
         const reconnect = () => {
             setTimeout(() => {
-                if (!this.ERROR) {
+                if (this.connectionStatus.get(repo.root.fsPath) !== ConnectionStatuses.ERROR) {
                     this.open.bind(this)(repo, userInfo);
                 }
             }, 50);
         };
 
         ws.on('error', (e) => {
-            this.ERROR = true;
+            this.connectionStatus.set(repo.root.fsPath, ConnectionStatuses.ERROR);
             commands.executeCommand('setContext', `${APP_HANDLE}.initialized`, false);
             setTimeout(() => {
                 this.open(repo, userInfo, retries + 1);
@@ -152,8 +162,7 @@ export class WS {
         });
 
         ws.on('open', () => {
-            this.OPEN = true;
-            this.ERROR = false;
+            this.connectionStatus.set(repo.root.fsPath, ConnectionStatuses.OPEN);
             this.onReconnectCallback();
             commands.executeCommand('setContext', `${APP_HANDLE}.initialized`, true);
             console.log('open');
@@ -196,7 +205,7 @@ export class WS {
                 projectIdFiles.forEach(projectIdFile => {
                     this.reactions.set(projectIdFile, this.lineReactions);
                 });
-                this.WS_INIT = true;
+                this.connectionStatus.set(repo.root.fsPath, ConnectionStatuses.WS_INIT);
 
                 if (newIds.length) {
                     const reactionContentRequest: ReactionDetailsRequest = {
@@ -244,15 +253,13 @@ export class WS {
 
     // TODO change this to be per project
     waitForDataInit(repo: Repo) {
-        const emailHash = this.activeRepoEmailMapping.get(repo.root.fsPath);
-        this.activeSockets.get(emailHash as string) as WebSocket;
         return new Promise((res, rej) => {
-            if (this.WS_INIT) {
+            if (this.connectionStatus.get(repo.root.fsPath) === ConnectionStatuses.WS_INIT) {
                 return res('success');
             }
             let counter = 0;
             const interval = setInterval((() => {
-                if (this.WS_INIT) {
+                if (this.connectionStatus.get(repo.root.fsPath) === ConnectionStatuses.WS_INIT) {
                     clearInterval(interval);
                     return res('success');
                 } else if (counter > 600) {

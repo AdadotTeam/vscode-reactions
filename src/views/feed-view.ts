@@ -410,7 +410,7 @@ export class FeedViewProvider implements WebviewViewProvider {
 			</head>
 			<body>
 			<div class="adadot">
-				for more details go to <a href="https://code-reactions.adadot.com">code-reactions.adadot.com</a></div>
+				for more details go to <a href="https://codereactions.adadot.com">codereactions.adadot.com</a></div>
 
 			${this.getHtmlContent(repo)}
 

@@ -77,10 +77,10 @@ export interface ReactionAddEvent {
         original_sha: string;
         original_line: number;
         original_timestamp: string;
-        author_email_sha: string;
+        author_email_hash: string;
         author_name: string;
         author_tz: string;
-        committer_email_sha: string;
+        committer_email_hash: string;
         committer_name: string;
         committer_tz: string;
         file_name: string;
@@ -103,7 +103,7 @@ export interface ReactionStatusEvent {
         branch?: string;
         sha?: string;
         datetime?: string;
-        author_email_sha?: string;
+        author_email_hash?: string;
         author_name?: string;
     }[]
 }

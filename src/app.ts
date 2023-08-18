@@ -34,6 +34,7 @@ import {NotificationView} from "./views/notification-view";
 import {configName, getProperty} from "./util/configuration";
 import fileInfo from "./util/file-info";
 import { Repo } from "./util/repo";
+import { once } from "./util/throttle";
 
 export class App {
     private readonly disposable: Disposable;
@@ -48,7 +49,7 @@ export class App {
     private seenReactions: Set<string> = new Set();
     private overwrittenReactions: Set<string> = new Set();
 	private readonly configChange: Disposable;
-    private invocationCounter = 0;
+    private updateView = once(this.updateViewUnthrottled.bind(this));
 
     constructor(extensionUri: Uri) {
         const feedViewProvider = new FeedViewProvider(extensionUri);
@@ -85,10 +86,6 @@ export class App {
         this.headWatcher.dispose();
         this.logWatcher.dispose();
 		this.configChange.dispose();
-    }
-
-    private invoked(){
-        this.invocationCounter = this.invocationCounter === Number.MAX_SAFE_INTEGER ? 0 : this.invocationCounter+1;
     }
 
     private setupListeners(): Disposable {
@@ -240,7 +237,7 @@ export class App {
         }
     }
 
-    private async updateView(
+    private async updateViewUnthrottled(
         textEditor = getActiveTextEditor()
     ): Promise<void> {
 
@@ -250,15 +247,15 @@ export class App {
             return;
         }
 
-        this.invoked();
-        const counter = this.invocationCounter;
+        let timeout;
 
         try{
 
         const before = getFilePosition(textEditor);
+        const repo = await fileInfo.getRepoFromFileUri(textEditor.document.uri);
 
         const timeout = setTimeout(() => {
-            if (!this.ws.ERROR) {
+            if (!this.ws.inError(repo)) {
                 this.statusBarView.clear();
                 this.inlineView.clear();
                 this.statusBarView.activity();
@@ -276,15 +273,10 @@ export class App {
         let onlyLastLineSelected = false;
         let existingReactions: { fileName: string; reaction: StoreLineReaction }[] = [];
 
-        const repo = await fileInfo.getRepoFromFileUri(textEditor.document.uri);
-
         const isTracked = await blame.isTracked(textEditor.document.fileName);
         commands.executeCommand('setContext', `${APP_HANDLE}.gitTracked`, isTracked);
 
         await Promise.all(textEditor.selections.map(async selection => {
-            if(this.invocationCounter > counter){
-                throw new Error('counter');
-            }
             const start = selection.start.line;
             let end = selection.end.line;
 
@@ -341,14 +333,11 @@ export class App {
         const after = getFilePosition(textEditorAfter);
 
         clearTimeout(timeout);
-        if(this.invocationCounter > counter){
-            throw new Error('counter');
-        }
 
         // Only update if we haven't moved since we started blaming
         // or if we no longer have focus on any file
         if (before === after || after === NO_FILE_OR_PLACE) {
-            if (this.ws.ERROR) {
+            if (this.ws.inError(repo)) {
                 this.statusBarView.setError();
             } else if (onlyLastLineSelected) {
                 await Promise.all([
@@ -368,7 +357,7 @@ export class App {
                 ]);
             }
         } else {
-            return this.updateView();
+            return this.updateViewUnthrottled();
         }
 
         if (this.annotateView.annotateIsOn) {
@@ -389,9 +378,9 @@ export class App {
             await this.feedViewProvider.setBlame(repo, textEditor.document.fileName, fullBlame);
             await this.feedViewProvider.setStatuses(repo, this.seenReactions, this.overwrittenReactions);
         }
-    }catch(e:any){
-        if(e.message !== 'counter') {
-            throw e;
+    }finally{
+        if(timeout){
+            clearTimeout(timeout);
         }
     }
 
@@ -441,7 +430,7 @@ export class App {
                     branch: fileHeadMap.get(fileName),
                     sha: fileCommit.sha as string,
                     datetime: fileCommit.datetime as string,
-                    author_email_sha: hash.getEmailHash(fileCommit.author_email as string),
+                    author_email_hash: hash.getEmailHash(fileCommit.author_email as string),
                     author_name: fileCommit.author_name as string
                 });
             });
@@ -550,10 +539,10 @@ export class App {
                         original_sha: lineAware.commit.hash,
                         original_line: lineAware.line.source,
                         original_timestamp: lineAware.commit.author.timestamp || lineAware.commit.committer.timestamp,
-                        author_email_sha: hash.getEmailHash(lineAware.commit.author.mail),
+                        author_email_hash: hash.getEmailHash(lineAware.commit.author.mail),
                         author_name: lineAware.commit.author.name,
                         author_tz: lineAware.commit.author.tz,
-                        committer_email_sha: hash.getEmailHash(lineAware.commit.committer.mail),
+                        committer_email_hash: hash.getEmailHash(lineAware.commit.committer.mail),
                         committer_name: lineAware.commit.committer.name,
                         committer_tz: lineAware.commit.committer.tz,
                         file_name: lineAware?.filename,
