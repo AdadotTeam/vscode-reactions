@@ -202,24 +202,24 @@ export const toHoverMarkdown = async (details?: Details[]) => {
     const byTypeArray = Array.from(byType?.entries() || []).sort((a, b) => b[1] - a[1]);
     const markdownString = new MarkdownString();
     markdownString.supportHtml = true;
-    markdownString.appendMarkdown('<span style="color:#f4f40b;background-color:#666;">Reactions</span>');
+    markdownString.appendMarkdown('<span>Reactions</span>');
     if (byTypeArray.length > 0) {
         const typeTexts = await Promise.all(byTypeArray.map(async ([type, amount]) => {
             const commandArgs = await command(type as ValueOf<typeof ReactionEmojis>);
             return `[${type}](command:${commandArgs?.command}?${encodeURI(JSON.stringify(commandArgs?.arguments))}) ${amount}`;
         }));
         markdownString.appendMarkdown(`<br/>`);
-        markdownString.appendMarkdown(`<span>${typeTexts.join(" ")}</span>`);
+        markdownString.appendMarkdown(`<span style="background-color:#282828;">${typeTexts.join(" ")}</span>`);
     }
     const values = Array.from(groups?.values() || []);
     if (values && values.length) {
         values.forEach(group => {
             markdownString.appendMarkdown(`<br/>`);
-            markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${group.name} reacted with ${group.type} ${format(new Date(group.ts))}${group.content ? ` commenting: "${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>`);
+            markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">${group.name} reacted with ${group.type} ${group.content ? `"${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>&nbsp;<span style="color:#FFFFFF66;">${format(new Date(group.ts))}</span>`);
         });
     } else {
         markdownString.appendMarkdown(`<br/>`);
-        markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">No reactions for this line</span>`);
+        markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">No reactions for this line</span>`);
     }
     markdownString.isTrusted = true;
     return markdownString;
@@ -250,16 +250,16 @@ export const toTooltipMarkdown = async (emoji: ValueOf<typeof ReactionEmojis>, d
     }>);
     const markdownString = new MarkdownString();
     markdownString.supportHtml = true;
-    markdownString.appendMarkdown(`<span style="color:#f4f40b;background-color:#666;">${emoji} Reactions</span>`);
+    markdownString.appendMarkdown(`<span>${emoji} Reactions</span>`);
     const values = Array.from(groups?.values() || []);
     if (values && values.length) {
         values.forEach(group => {
             markdownString.appendMarkdown(`<br/>`);
-            markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">${group.name} reacted with ${group.type} ${format(new Date(group.ts))}${group.content ? ` commenting: "${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>`);
+            markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">${group.name} reacted with ${group.type} ${group.content ? ` "${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>&nbsp;<span style="color:#FFFFFF66;">${format(new Date(group.ts))}</span>`);
         });
     } else {
         markdownString.appendMarkdown(`<br/>`);
-        markdownString.appendMarkdown(`<span style="color:#f00;background-color:#fff;">No reactions for this line</span>`);
+        markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">No reactions for this line</span>`);
     }
     markdownString.isTrusted = true;
     return markdownString;
