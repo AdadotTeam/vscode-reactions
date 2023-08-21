@@ -28,28 +28,38 @@ choose the ones that work best for you!
 1. `Select any lines of code` and `see how many reactions` it has on the status bar.
 2. `Hover` over the reaction and see by how many people
 3. `Click` any emoji to react to these lines yourself
+
+
    ![Status Bar Reactions](images/status-bar.gif)
 
 ### React with Comment
 1. `Select any lines of code` and right click
 2. Choose `Add Reaction With Content > Any reaction`
 3. Add your comment and press `Enter`
+
+
    ![React with Comment](images/comment.gif)
 
 ### Inline Reactions
 1. `Select any lines of code` and see how many reactions it has next to your cursor.
 2. `Hover` over it and see `when` by `whom` and any `comment` they left
+
+
    ![Inline Reactions](images/inline.gif)
 
 ### Annotate Code with Reactions
 1. Right click on any file lines and select `Toggle Reaction Annotations`
 2. `See easily next to each line` any reaction they have.
 3. `Hover` any of them so see `when` by `whom` and any `comment` they left
+
+
    ![Annotate Code with Reactions](images/annotate.gif)
 
 ### Reactions Feed
 1. Click on the `Reactions:Feed` Panel
 2. See a chronological list of all repo reactions
+
+
    ![Reactions Feed](images/feed.gif)
 
 ### Notifications
