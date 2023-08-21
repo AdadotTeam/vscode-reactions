@@ -334,6 +334,14 @@ export class App {
 
         clearTimeout(timeout);
 
+        Object.entries(ReactionEmojis).forEach(([emojiName, emoji]) =>{
+            if(linesReactions && linesReactions[`your${emoji}`] && linesReactions[`your${emoji}`] >= linesSelected){
+                commands.executeCommand('setContext', `${APP_HANDLE}.${emojiName}WithContent`, false);
+            }else{
+                commands.executeCommand('setContext', `${APP_HANDLE}.${emojiName}WithContent`, true);
+            }
+        });
+
         // Only update if we haven't moved since we started blaming
         // or if we no longer have focus on any file
         if (before === after || after === NO_FILE_OR_PLACE) {

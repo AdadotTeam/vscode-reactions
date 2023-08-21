@@ -164,28 +164,36 @@
       ],
       "code-reactions.addReactionWithContent": [
         {
-          "command": "code-reactions.thumbsupWithContent"
+          "command": "code-reactions.thumbsupWithContent",
+          "when": "code-reactions.thumbsupWithContent"
         },
         {
-          "command": "code-reactions.thumbsdownWithContent"
+          "command": "code-reactions.thumbsdownWithContent",
+          "when": "code-reactions.thumbsdownWithContent"
         },
         {
-          "command": "code-reactions.bugWithContent"
+          "command": "code-reactions.bugWithContent",
+          "when": "code-reactions.bugWithContent"
         },
         {
-          "command": "code-reactions.poopWithContent"
+          "command": "code-reactions.poopWithContent",
+          "when": "code-reactions.poopWithContent"
         },
         {
-          "command": "code-reactions.rocketWithContent"
+          "command": "code-reactions.rocketWithContent",
+          "when": "code-reactions.rocketWithContent"
         },
         {
-          "command": "code-reactions.thinkingWithContent"
+          "command": "code-reactions.thinkingWithContent",
+          "when": "code-reactions.thinkingWithContent"
         },
         {
-          "command": "code-reactions.heart_eyesWithContent"
+          "command": "code-reactions.heart_eyesWithContent",
+          "when": "code-reactions.heart_eyesWithContent"
         },
         {
-          "command": "code-reactions.eyesWithContent"
+          "command": "code-reactions.eyesWithContent",
+          "when": "code-reactions.eyesWithContent"
         }
       ],
       "editor/title": [
