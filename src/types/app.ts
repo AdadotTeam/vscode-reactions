@@ -52,13 +52,13 @@ export interface ProjectOpenEvent {
 }
 
 export enum ReactionEmojis {
-    like = '👍',
-    dislike = '👎',
+    thumbsup = '👍',
+    thumbsdown = '👎',
     bug = '🐛',
     poop = '💩',
     rocket = '🚀',
     thinking = '🤔',
-    heartEyes = '😍',
+    heart_eyes = '😍',
     eyes = '👀'
 }
 

@@ -110,20 +110,32 @@ export const getRemoteUrl = async (): Promise<string> => {
 
 	const { fileName } = activeEditor.document;
 	const currentBranch = await getCurrentBranch(fileName);
-	const curRemote = await runGit(
+	let curRemoteBranch = await runGit(
 		fileName,
 		"config",
 		`branch.${currentBranch}.remote`,
 	);
-	return runGit(
+	let defaultBranch;
+	if(!curRemoteBranch){
+		defaultBranch = await getDefaultBranchName(fileName);
+		if(defaultBranch !== currentBranch){
+			curRemoteBranch = await runGit(
+				fileName,
+				"config",
+				`branch.${defaultBranch}.remote`,
+			);
+		}
+	}
+	const remoteUrl = await runGit(
 		fileName,
 		"config",
-		`remote.${curRemote}.url`,
+		`remote.${curRemoteBranch || 'origin'}.url`,
 	);
+	return remoteUrl;
 };
 
 // this requires user to be online
-export const validateReadAccess = async (remoteUrl: string): Promise<boolean> => {
+export const validateReadAccess  = async (remoteUrl: string): Promise<boolean> => {
 	const activeEditor = getActiveTextEditor();
 
 	if (!validEditor(activeEditor)) {
@@ -132,13 +144,19 @@ export const validateReadAccess = async (remoteUrl: string): Promise<boolean> =>
 
 	const { fileName } = activeEditor.document;
 
-	const result = await runGit(
-		fileName,
-		"ls-remote",
-		remoteUrl,
-	);
-
-	return !!result;
+	try{
+		const result = await runGit(
+			fileName,
+			"ls-remote",
+			"--get-url",
+			remoteUrl,
+		);
+	
+		return !!result;
+	}catch(e: any){
+		return false;
+	}
+	
 };
 
 export const isCommitInCurrentBranch = async (branch: string, sha: string): Promise<boolean> => {
