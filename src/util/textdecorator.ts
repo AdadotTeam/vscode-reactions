@@ -1,4 +1,4 @@
-import {Command, MarkdownString} from "vscode";
+import {Command, MarkdownString, ThemeColor} from "vscode";
 import {Details, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
 import {format} from "timeago.js";
 import fileInfo from "./file-info";
@@ -209,17 +209,17 @@ export const toHoverMarkdown = async (details?: Details[]) => {
             return `[${type}](command:${commandArgs?.command}?${encodeURI(JSON.stringify(commandArgs?.arguments))}) ${amount}`;
         }));
         markdownString.appendMarkdown(`<br/>`);
-        markdownString.appendMarkdown(`<span style="background-color:#282828;">${typeTexts.join(" ")}</span>`);
+        markdownString.appendMarkdown(`<span>${typeTexts.join(" ")}</span>`);
     }
     const values = Array.from(groups?.values() || []);
     if (values && values.length) {
         values.forEach(group => {
             markdownString.appendMarkdown(`<br/>`);
-            markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">${group.name} reacted with ${group.type} ${group.content ? `"${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>&nbsp;<span style="color:#FFFFFF66;">${format(new Date(group.ts))}</span>`);
+            markdownString.appendMarkdown(`<span>${group.name} reacted with ${group.type} ${group.content ? `"${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>&nbsp;<span style="color:#7B7B7B;">${format(new Date(group.ts))}</span>`);
         });
     } else {
         markdownString.appendMarkdown(`<br/>`);
-        markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">No reactions for this line</span>`);
+        markdownString.appendMarkdown(`<span>No reactions for this line</span>`);
     }
     markdownString.isTrusted = true;
     return markdownString;
@@ -255,11 +255,11 @@ export const toTooltipMarkdown = async (emoji: ValueOf<typeof ReactionEmojis>, d
     if (values && values.length) {
         values.forEach(group => {
             markdownString.appendMarkdown(`<br/>`);
-            markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">${group.name} reacted with ${group.type} ${group.content ? ` "${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>&nbsp;<span style="color:#FFFFFF66;">${format(new Date(group.ts))}</span>`);
+            markdownString.appendMarkdown(`<span>${group.name} reacted with ${group.type} ${group.content ? ` "${group.content}"` : ''}${group.count > 1 ? ` on ${group.count} lines` : ''}</span>&nbsp;<span style="color:#7B7B7B;">${format(new Date(group.ts))}</span>`);
         });
     } else {
         markdownString.appendMarkdown(`<br/>`);
-        markdownString.appendMarkdown(`<span style="color: #FFFFFF99;">No reactions for this line</span>`);
+        markdownString.appendMarkdown(`<span>No reactions for this line</span>`);
     }
     markdownString.isTrusted = true;
     return markdownString;
