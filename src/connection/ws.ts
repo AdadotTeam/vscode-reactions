@@ -133,7 +133,7 @@ export class WS {
 
     open(repo: Repo, userInfo: UserInfo, retries: number = 0) {
         const emailHash = hash.getEmailHash(userInfo.email as string);
-        const url = new URL(process.env.WS_URL as string || 'wss://code-reactions-ws.adadot.com');
+        const url = new URL(process.env.WS_URL as string || 'wss://codereactions-ws.adadot.com');
         url.searchParams.append('email_hash', emailHash);
         if(userInfo.name){
             url.searchParams.append('name', userInfo.name);
