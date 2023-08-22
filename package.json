@@ -7,7 +7,7 @@
   "engines": {
     "vscode": "^1.80.0"
   },
-  "homepage": "https://adadot.com/code-reactions",
+  "homepage": "https://adadot.com/codereactions",
 	"bugs": {
 		"url": "https://github.com/AdadotTeam/vscode-reactions/issues"
 	},
@@ -17,6 +17,13 @@
 	},
   "categories": [
     "Other"
+  ],
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/adadot_community-code_reactions-blue?logo=Discord&link=https%3A%2F%2Fdiscord.gg%2FHZhuynMRsN",
+      "href": "https://discord.gg/HZhuynMRsN/",
+      "description": "Join our dev community!"
+    }
   ],
   "galleryBanner": {
 		"color": "#59C36A",
