@@ -75,13 +75,15 @@ Since we didn't want to bloat our IDE with more "heavy" data views we created a 
 frontend to host some of the views that are cross-repository and other views that give you more of a
 high level overview of how your repos and your stats are doing and progressing over time.
 
+You can find these views at [codereactions.adadot.com](https://codereactions.adadot.com)
+
 The frontend currently looks like below, though functionality will be constantly added as people's 
 needs progress and are better defined.
 
 ![Frontend](images/fe.png)
 
 *Note that you need to register with the email you commit in order to ensure that you see the relevant
-reaction data (an nothing else 😉)*
+reaction data (and nothing else 😉)*
 
 ### Supported Reactions
 In the future we would like to support any native emoji. Until we figure out
