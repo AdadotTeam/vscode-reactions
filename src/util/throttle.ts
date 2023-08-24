@@ -26,3 +26,18 @@ export const once = (fn: (...argss:any[])=>Promise<any>) => {
     return res;
     };
   };
+
+  export const onceMemoize = (fn: (...argss:any[])=>Promise<any>, expire: number) => {
+    const cache: {[args: string]:Promise<any>} = {};
+    return async (...args:any[]) => {
+        const argsString = JSON.stringify(args);
+        if(!cache[argsString] && expire){
+            setTimeout(()=>{
+                delete cache[argsString];
+            }, expire);
+        }
+        cache[argsString] = cache[argsString] || fn.apply(this, args);
+        const res = await cache[argsString];
+    return res;
+    };
+  };

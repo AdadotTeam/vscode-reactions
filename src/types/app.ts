@@ -62,6 +62,12 @@ export enum ReactionEmojis {
     eyes = '👀'
 }
 
+export const ReactionEmojisInverse = Object.fromEntries(
+    Object
+      .entries(ReactionEmojis)
+      .map(([key, value]) => [value, key])
+    );
+
 export interface ReactionAddEvent {
     action: "reaction";
     reactions: {

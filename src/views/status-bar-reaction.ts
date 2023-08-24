@@ -1,5 +1,5 @@
 import {Command, MarkdownString, StatusBarAlignment, StatusBarItem, ThemeColor, window} from "vscode";
-import {Details, ReactionEmojis, StoreLineReaction, yourEmoji} from "../types/app";
+import {Details, ReactionEmojis, ReactionEmojisInverse, StoreLineReaction, yourEmoji} from "../types/app";
 import {getActiveTextEditor} from "../util/vs-code";
 
 import {APP_HANDLE} from "../util/constants";
@@ -52,7 +52,7 @@ export class StatusBarReaction {
 			if(repo){
 				return {
                     // @ts-ignore
-                    command: `${APP_HANDLE}.${Object.keys(ReactionEmojis).find(name => ReactionEmojis[name] === this.emoji)}`,
+                    command: `${APP_HANDLE}.${ReactionEmojisInverse[this.emoji]}`,
                     title: `Code Reactions: ${this.emoji}`,
                     // @ts-ignore
 					arguments: [textEditor.document, repo, textEditor.selections, this.emoji]

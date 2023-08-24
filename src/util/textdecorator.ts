@@ -1,5 +1,5 @@
-import {Command, MarkdownString, ThemeColor} from "vscode";
-import {Details, ReactionEmojis, StoreLineReaction, ValueOf} from "../types/app";
+import {Command, MarkdownString} from "vscode";
+import {Details, ReactionEmojis, StoreLineReaction, ValueOf, ReactionEmojisInverse} from "../types/app";
 import {format} from "timeago.js";
 import fileInfo from "./file-info";
 import {getActiveTextEditor} from "./vs-code";
@@ -158,16 +158,13 @@ export const toAnnotationTextView = (lineReactions: StoreLineReaction): string =
     );
 
 const command = async (emoji: ValueOf<typeof ReactionEmojis>): Promise<Command | undefined> => {
-
     const textEditor = getActiveTextEditor();
     if (textEditor) {
         const repo = await fileInfo.getRepoFromFileUri(textEditor?.document.uri);
         if (repo) {
             return {
-                // @ts-ignore
-                command: `${APP_HANDLE}.${Object.keys(ReactionEmojis).find(name => ReactionEmojis[name] === emoji)}`,
+                command: `${APP_HANDLE}.${ReactionEmojisInverse[emoji]}`,
                 title: `Code Reactions: ${emoji}`,
-                // @ts-ignore
                 arguments: [textEditor.document, repo, textEditor.selections, emoji]
             };
         }

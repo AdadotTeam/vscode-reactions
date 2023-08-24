@@ -28,7 +28,9 @@ class FileInfo {
             return undefined;
         }
         if(this.rootPathToRepo.has(rootFolder)){
-            return this.rootPathToRepo.get(rootFolder);
+            const foundRepo = this.rootPathToRepo.get(rootFolder) as Repo;
+            this.filePathToRepoPath.set(filePath, foundRepo);
+            return foundRepo;
         }
 
         const repo = await Repo.getFromRoot(rootFolder);

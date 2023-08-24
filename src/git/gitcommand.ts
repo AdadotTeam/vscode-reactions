@@ -8,6 +8,7 @@ import { execute } from "./execcommand";
 import { getActiveTextEditor, validEditor } from "../util/vs-code";
 import { Logger } from "../util/logger";
 import { splitChunk } from "../util/std-process";
+import { onceMemoize } from "../util/throttle";
 
 
 export const getGitCommand = (): string => {
@@ -24,7 +25,8 @@ export const getGitCommand = (): string => {
 	return "git";
 };
 
-const runGit = (cwd: string, ...args: string[]): Promise<string> =>{
+const runGitBase = (cwd: string, ...args: string[]): Promise<string> =>{
+	Logger.info([cwd, ...args].join(", "));
 	let dir = cwd;
 	if(existsSync(cwd)){
 		const stat = lstatSync(cwd);
@@ -32,6 +34,8 @@ const runGit = (cwd: string, ...args: string[]): Promise<string> =>{
 	}
 	return execute(getGitCommand(), args, { cwd: dir });
 };
+
+const runGit = onceMemoize(runGitBase, 500);
 
 export const getActiveFileOrigin = async (
 	remoteName: string,

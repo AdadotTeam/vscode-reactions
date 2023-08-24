@@ -31,6 +31,7 @@ import store from "../util/store";
 import {UserInfo} from "../types/git";
 import { Repo } from "../util/repo";
 import fileInfo from "../util/file-info";
+import { Logger } from "../util/logger";
 
 export type NewReactionEvent = ProjectReactionsResponse['reactions'];
 
@@ -133,7 +134,7 @@ export class WS {
 
     open(repo: Repo, userInfo: UserInfo, retries: number = 0) {
         const emailHash = hash.getEmailHash(userInfo.email as string);
-        const url = new URL(process.env.WS_URL as string || 'wss://codereactions-ws.adadot.com');
+        const url = new URL(process.env.WS_URL || 'wss://codereactions-ws.adadot.com');
         url.searchParams.append('email_hash', emailHash);
         if(userInfo.name){
             url.searchParams.append('name', userInfo.name);
@@ -158,14 +159,14 @@ export class WS {
             setTimeout(() => {
                 this.open(repo, userInfo, retries + 1);
             }, 10000 * retries);
-            console.error(e);
+            Logger.error(e);
         });
 
         ws.on('open', () => {
             this.connectionStatus.set(repo.root.fsPath, ConnectionStatuses.OPEN);
             this.onReconnectCallback();
             commands.executeCommand('setContext', `${APP_HANDLE}.initialized`, true);
-            console.log('open');
+            Logger.info("ws connection open for repo");
         });
 
         ws.on('close', () => {
@@ -251,7 +252,6 @@ export class WS {
         };
     }
 
-    // TODO change this to be per project
     waitForDataInit(repo: Repo) {
         return new Promise((res, rej) => {
             if (this.connectionStatus.get(repo.root.fsPath) === ConnectionStatuses.WS_INIT) {
@@ -359,10 +359,8 @@ export class WS {
         const folderPath = repo.root.fsPath;
                 const emailHash = hash.getEmailHash(userInfo.email as string);
                 if(this.activeSockets.has(emailHash) && this.activeRepoEmailMapping.has(folderPath)){
-                    console.log('already connected');
                     return;
                 }
-                console.log('call open');
                 this.open(repo, userInfo);
                 this.activeRepoEmailMapping.set(folderPath, emailHash);
                 const remoteUrl = await getRemoteUrl();
@@ -388,10 +386,13 @@ export class WS {
 
     async initVisibleEditors() {
         await Promise.all((window.visibleTextEditors || []).map(async editor => {
-            const userInfo = await fileInfo.getUserInfo(editor.document.fileName);
-            const repo = await fileInfo.getRepoFromFileUri(editor.document.uri);
-            if (repo && userInfo?.email) {
-                await this.initRepo(userInfo, repo);
+            const {scheme} = editor.document.uri;
+            if (scheme === "file" || scheme === "untitled") {
+                const userInfo = await fileInfo.getUserInfo(editor.document.fileName);
+                const repo = await fileInfo.getRepoFromFileUri(editor.document.uri);
+                if (repo && userInfo?.email) {
+                    await this.initRepo(userInfo, repo);
+                }
             }
         }));
     }
