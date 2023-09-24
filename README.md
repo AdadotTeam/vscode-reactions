@@ -16,6 +16,9 @@ and bring the team around to help you scoop all of these.
 ```
 We give you the ability to react to any code, you decide how to use it!
 
+## Installation
+Install Code Reactions by clicking Install on the banner in [Code Reactions in the VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=Adadot.code-reactions), or from the Extensions side bar in VS Code, by searching for `Code Reactions`.
+
 ## Features and how to use
 
 **In its core there is only a single feature:**
